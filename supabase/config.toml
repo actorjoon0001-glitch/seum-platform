@@ -1,0 +1,12 @@
+# Supabase 로컬/원격 공통 설정.
+# 원격 프로젝트와 연결: `supabase link --project-ref <ref>`
+# 마이그레이션 적용:    `npm run db:push`
+
+project_id = "buildlab"
+
+[db]
+major_version = 15
+
+[auth]
+# 이메일 기반 로그인 (멤버 초대 흐름)
+enable_signup = true
