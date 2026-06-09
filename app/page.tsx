@@ -24,6 +24,14 @@ export default function Home() {
           <br className="hidden sm:block" />
           상담부터 견적, 3D 설계, 계약, 시공까지 하나로 잇는 플랫폼
         </p>
+        <div className="mt-8">
+          <a
+            href="/designer"
+            className="inline-block rounded-xl bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-dark"
+          >
+            3D 상담 견적 데모 체험 →
+          </a>
+        </div>
       </header>
 
       <section className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
