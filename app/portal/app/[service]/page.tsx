@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { findService } from "@/features/portal/config/menu";
+import { findService } from "@/features/portal/config/systems";
 import { Icon } from "@/features/portal/components/icons";
 
 /**

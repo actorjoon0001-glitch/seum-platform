@@ -5,16 +5,18 @@ import type { ScheduleType } from "../data/mock";
 
 const TYPE_STYLE: Record<ScheduleType, string> = {
   방문예약: "bg-amber-100 text-amber-700",
+  회의: "bg-slate-100 text-slate-700",
   계약: "bg-seum-100 text-seum-700",
   설계: "bg-blue-100 text-blue-700",
   시공: "bg-violet-100 text-violet-700",
+  휴무: "bg-neutral-100 text-neutral-500",
 };
 
-/** 1열 — 오늘의 일정 + 캘린더 위젯 */
+/** 오늘 일정 + 월간 캘린더 */
 export function TodaySchedule() {
   return (
     <Card
-      title="오늘의 일정"
+      title="오늘 일정"
       icon="calendar"
       headerRight={
         <span className="rounded-full bg-seum-50 px-2 py-0.5 text-xs font-medium text-seum-600">

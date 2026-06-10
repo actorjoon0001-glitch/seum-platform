@@ -1,0 +1,182 @@
+import type { Role } from "./roles";
+import { isSuperuser } from "./roles";
+import type { IconName } from "../components/icons";
+
+/**
+ * 세움 플랫폼 = 회사 포털 + 업무 시스템 런처.
+ *
+ * 실제 업무 처리는 각 OS(독립 웹서비스)에서 수행하고,
+ * 포털은 진입점(허브) 역할만 한다.
+ * - `href`(`/portal/app/{key}`)로 내부 iframe 래퍼를 통해 진입.
+ * - `serviceUrl`이 연결(ready)되면 새 탭/임베드로 실제 서비스 진입.
+ * - `roles`가 비면 전체 공개. 마스터/관리자는 항상 전체 노출.
+ */
+
+export type Tone =
+  | "green"
+  | "blue"
+  | "indigo"
+  | "amber"
+  | "violet"
+  | "cyan"
+  | "rose"
+  | "teal"
+  | "slate";
+
+export interface SystemCard {
+  key: string;
+  label: string;
+  desc: string;
+  icon: IconName;
+  tone: Tone;
+  href: string;
+  serviceUrl?: string;
+  ready: boolean;
+  roles?: Role[];
+  /** 메인 "자주 사용하는 시스템" 영역에 노출할지 */
+  launcher: boolean;
+  /** 세움OS처럼 강조(허브) 표시 */
+  featured?: boolean;
+}
+
+export const SYSTEMS: SystemCard[] = [
+  {
+    key: "seum",
+    label: "세움OS",
+    desc: "계약·설계·시공·정산 통합 업무 시스템",
+    icon: "hub",
+    tone: "green",
+    href: "/portal/app/seum",
+    serviceUrl: "https://os.seum.example.com",
+    ready: false,
+    launcher: true,
+    featured: true,
+  },
+  {
+    key: "call",
+    label: "Call OS",
+    desc: "고객 문의·상담 기록·방문예약 관리",
+    icon: "call",
+    tone: "blue",
+    href: "/portal/app/call",
+    serviceUrl: "https://call.seum.example.com",
+    ready: false,
+    launcher: true,
+    roles: ["sales", "marketing"],
+  },
+  {
+    key: "contract",
+    label: "계약서OS",
+    desc: "견적서 작성 및 전자계약 관리",
+    icon: "contract",
+    tone: "indigo",
+    href: "/portal/app/contract",
+    serviceUrl: "https://contract.seum.example.com",
+    ready: false,
+    launcher: true,
+    roles: ["sales", "finance"],
+  },
+  {
+    key: "catalog",
+    label: "온라인 카탈로그",
+    desc: "모델·옵션·가격 안내",
+    icon: "catalog",
+    tone: "amber",
+    href: "/portal/app/catalog",
+    serviceUrl: "https://catalog.seum.example.com",
+    ready: false,
+    launcher: true,
+  },
+  {
+    key: "design",
+    label: "설계OS",
+    desc: "도면·허가·설계 검토 관리",
+    icon: "design",
+    tone: "violet",
+    href: "/portal/app/design",
+    serviceUrl: "https://design.seum.example.com",
+    ready: false,
+    launcher: true,
+    roles: ["design"],
+  },
+  {
+    key: "construction",
+    label: "시공OS",
+    desc: "현장·공정·사진 관리",
+    icon: "construction",
+    tone: "cyan",
+    href: "/portal/app/construction",
+    serviceUrl: "https://build.seum.example.com",
+    ready: false,
+    launcher: true,
+    roles: ["construction"],
+  },
+  {
+    key: "finance",
+    label: "정산OS",
+    desc: "수납·잔금·인센티브 관리",
+    icon: "finance",
+    tone: "rose",
+    href: "/portal/app/finance",
+    serviceUrl: "https://finance.seum.example.com",
+    ready: false,
+    launcher: true,
+    roles: ["finance"],
+  },
+  {
+    key: "worklog",
+    label: "업무일지",
+    desc: "일일 업무 기록 및 보고",
+    icon: "worklog",
+    tone: "teal",
+    href: "/portal/app/worklog",
+    serviceUrl: "https://worklog.seum.example.com",
+    ready: false,
+    launcher: true,
+  },
+  {
+    key: "archive",
+    label: "자료실",
+    desc: "회사 양식 및 문서 보관",
+    icon: "archive",
+    tone: "slate",
+    href: "/portal/app/archive",
+    serviceUrl: "https://archive.seum.example.com",
+    ready: false,
+    launcher: true,
+  },
+  // 보조 진입점(런처 카드 아님 · 상단 메뉴에서 진입)
+  {
+    key: "manual",
+    label: "업무 매뉴얼",
+    desc: "업무 프로세스 및 가이드 문서",
+    icon: "manual",
+    tone: "teal",
+    href: "/portal/app/manual",
+    serviceUrl: "https://manual.seum.example.com",
+    ready: false,
+    launcher: false,
+  },
+  {
+    key: "org",
+    label: "조직도",
+    desc: "부서·구성원·연락처",
+    icon: "org",
+    tone: "indigo",
+    href: "/portal/app/org",
+    serviceUrl: "https://org.seum.example.com",
+    ready: false,
+    launcher: false,
+  },
+];
+
+/** "자주 사용하는 시스템" 카드 (역할 필터 적용) */
+export function launcherSystems(role: Role): SystemCard[] {
+  const list = SYSTEMS.filter((s) => s.launcher);
+  if (isSuperuser(role)) return list;
+  return list.filter((s) => !s.roles || s.roles.includes(role));
+}
+
+export function findService(key: string): SystemCard | undefined {
+  return SYSTEMS.find((s) => s.key === key);
+}

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BuildLab — 건축 상담·견적 플랫폼",
+  title: "세움 플랫폼 — 세움디자인하우징 통합 업무 포털",
   description:
-    "건축회사·이동식주택·전원주택·인테리어 업체를 위한 상담/견적/3D설계/계약/시공 관리 SaaS",
+    "영업·설계·시공·정산 업무를 하나로 연결하는 세움디자인하우징 내부 통합 업무 포털.",
 };
 
 export default function RootLayout({

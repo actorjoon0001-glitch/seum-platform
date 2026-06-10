@@ -24,11 +24,11 @@ export interface RoleMeta {
 export const ROLES: RoleMeta[] = [
   { id: "master", label: "마스터", superuser: true },
   { id: "admin", label: "관리자", superuser: true },
-  { id: "sales", label: "영업" },
-  { id: "design", label: "설계" },
-  { id: "construction", label: "시공" },
-  { id: "finance", label: "정산" },
-  { id: "marketing", label: "마케팅" },
+  { id: "sales", label: "영업팀" },
+  { id: "design", label: "설계팀" },
+  { id: "construction", label: "시공팀" },
+  { id: "finance", label: "정산팀" },
+  { id: "marketing", label: "마케팅팀" },
 ];
 
 export const DEFAULT_ROLE: Role = "master";

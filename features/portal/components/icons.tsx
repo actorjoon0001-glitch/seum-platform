@@ -35,7 +35,15 @@ export type IconName =
   | "logout"
   | "chevron"
   | "clock"
-  | "task";
+  | "task"
+  | "home"
+  | "manual"
+  | "archive"
+  | "update"
+  | "hub"
+  | "meeting"
+  | "holiday"
+  | "arrow";
 
 const PATHS: Record<IconName, ReactElement> = {
   call: (
@@ -189,6 +197,50 @@ const PATHS: Record<IconName, ReactElement> = {
       <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
     </>
   ),
+  home: (
+    <>
+      <path d="M3 11l9-8 9 8" />
+      <path d="M5 10v10h14V10" />
+      <path d="M10 20v-6h4v6" />
+    </>
+  ),
+  manual: (
+    <>
+      <path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z" />
+      <path d="M9 4v14M12 8h3M12 11h3" />
+    </>
+  ),
+  archive: (
+    <>
+      <path d="M3 7h18v13H3z" />
+      <path d="M3 7l2-3h14l2 3M9 12h6" />
+    </>
+  ),
+  update: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 16V9M9 12l3-3 3 3" />
+    </>
+  ),
+  hub: (
+    <>
+      <path d="M12 3l8 4-8 4-8-4 8-4z" />
+      <path d="M4 12l8 4 8-4M4 16l8 4 8-4" />
+    </>
+  ),
+  meeting: (
+    <>
+      <path d="M7 8h10a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2l-3 3v-3H7a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2z" />
+      <path d="M9 12h6" />
+    </>
+  ),
+  holiday: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M19 5l-1.4 1.4M6.4 17.6L5 19" />
+    </>
+  ),
+  arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
 };
 
 export function Icon({
