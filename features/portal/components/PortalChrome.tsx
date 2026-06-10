@@ -1,0 +1,133 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { Icon } from "./icons";
+import { useRole } from "./PortalProvider";
+import { visibleMenu } from "../config/menu";
+import { ROLES, roleLabel } from "../config/roles";
+import type { Role } from "../config/roles";
+import { profile } from "../data/mock";
+
+/** 상단 고정 헤더(흰색) + 그린 네비게이션 바 */
+export function PortalChrome() {
+  const { role, setRole } = useRole();
+  const pathname = usePathname();
+  const menu = visibleMenu(role);
+  const [roleOpen, setRoleOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-40 shadow-sm">
+      {/* 상단 흰색 바: 로고 + 유틸 + 프로필 */}
+      <div className="bg-white">
+        <div className="mx-auto flex max-w-[1600px] items-center gap-4 px-4 py-2.5 lg:px-6">
+          <Link href="/portal" className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-seum-500 text-white">
+              <Icon name="site" size={18} />
+            </span>
+            <span className="text-lg font-extrabold tracking-tight text-neutral-900">
+              세움<span className="text-seum-600"> 플랫폼</span>
+            </span>
+          </Link>
+
+          <div className="ml-auto flex items-center gap-1 text-neutral-400">
+            {(["search", "star", "expand", "grid"] as const).map((n) => (
+              <button
+                key={n}
+                type="button"
+                className="rounded-lg p-2 transition hover:bg-neutral-100 hover:text-seum-600"
+                aria-label={n}
+              >
+                <Icon name={n} size={18} />
+              </button>
+            ))}
+
+            {/* 프로필 영역 */}
+            <div className="ml-2 flex items-center gap-3 border-l border-neutral-200 pl-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-seum-100 text-sm font-bold text-seum-700">
+                {profile.name.slice(1, 2)}
+              </span>
+              <div className="hidden text-right leading-tight sm:block">
+                <p className="text-sm font-semibold text-neutral-800">
+                  {profile.name} {profile.rank}
+                  <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-seum-50 px-1.5 py-0.5 text-[10px] font-medium text-seum-600">
+                    <span className="h-1.5 w-1.5 rounded-full bg-seum-500" />
+                    {profile.status}
+                  </span>
+                </p>
+                <p className="text-[11px] text-neutral-400">
+                  {profile.dept} · {roleLabel(role)}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-lg p-2 text-neutral-400 transition hover:bg-rose-50 hover:text-rose-500"
+                aria-label="로그아웃"
+              >
+                <Icon name="logout" size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 그린 네비게이션 바 */}
+      <nav className="bg-seum-600">
+        <div className="mx-auto flex max-w-[1600px] items-center px-4 lg:px-6">
+          <ul className="flex flex-1 flex-wrap items-center">
+            {menu.map((m) => {
+              const active = pathname === m.href;
+              return (
+                <li key={m.key}>
+                  <Link
+                    href={m.href}
+                    className={`flex items-center gap-1.5 px-3.5 py-3 text-sm font-medium transition lg:px-4 ${
+                      active
+                        ? "bg-seum-700 text-white"
+                        : "text-seum-50 hover:bg-seum-700/60 hover:text-white"
+                    }`}
+                  >
+                    <Icon name={m.icon} size={16} />
+                    {m.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* 역할 미리보기 스위처 (인증 전 임시) */}
+          <div className="relative ml-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setRoleOpen((v) => !v)}
+              className="flex items-center gap-1.5 rounded-md bg-seum-700/70 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-seum-700"
+            >
+              권한: {roleLabel(role)}
+              <Icon name="chevron" size={14} />
+            </button>
+            {roleOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1 w-32 overflow-hidden rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
+                {ROLES.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => {
+                      setRole(r.id as Role);
+                      setRoleOpen(false);
+                    }}
+                    className={`block w-full px-3 py-1.5 text-left text-sm transition hover:bg-seum-50 ${
+                      role === r.id ? "font-semibold text-seum-600" : "text-neutral-600"
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+    </header>
+  );
+}
