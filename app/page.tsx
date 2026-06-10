@@ -24,12 +24,18 @@ export default function Home() {
           <br className="hidden sm:block" />
           상담부터 견적, 3D 설계, 계약, 시공까지 하나로 잇는 플랫폼
         </p>
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <a
-            href="/designer"
+            href="/portal"
             className="inline-block rounded-xl bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-dark"
           >
-            3D 상담 견적 데모 체험 →
+            세움 플랫폼 포털 입장 →
+          </a>
+          <a
+            href="/designer"
+            className="inline-block rounded-xl border border-neutral-700 px-6 py-3 font-medium text-neutral-200 transition hover:border-brand/60 hover:text-white"
+          >
+            3D 상담 견적 데모 체험
           </a>
         </div>
       </header>
