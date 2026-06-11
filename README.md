@@ -41,6 +41,7 @@ BuildLab는 건축 관련 업체가 **고객 상담부터 견적, 3D 설계, 계
 | 04 | [docs/04-api-design.md](docs/04-api-design.md) | API / 데이터 액세스 설계 |
 | 05 | [docs/05-rbac.md](docs/05-rbac.md) | 권한(RBAC) 매트릭스 |
 | 06 | [docs/06-roadmap.md](docs/06-roadmap.md) | 개발 우선순위 / 마일스톤 |
+| 07 | [docs/07-sso-auth.md](docs/07-sso-auth.md) | 중앙 통합 인증 / SSO (여러 시스템 단일 로그인) |
 
 ## 핵심 설계 원칙
 
