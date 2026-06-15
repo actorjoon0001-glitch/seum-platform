@@ -1,3 +1,5 @@
+import { LinkHub } from "@/features/links/LinkHub";
+
 const features = [
   { title: "고객관리 (CRM)", desc: "유입 고객을 상태 파이프라인으로 관리해 전환율을 높입니다." },
   { title: "건축 모델 카탈로그", desc: "10·14·19·25평 및 맞춤설계 모델과 옵션을 데이터로 관리합니다." },
@@ -33,6 +35,8 @@ export default function Home() {
           </a>
         </div>
       </header>
+
+      <LinkHub />
 
       <section className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f) => (
