@@ -111,6 +111,16 @@ export const SYSTEMS: SystemCard[] = [
     roles: ["construction"],
   },
   {
+    key: "order",
+    label: "발주OS",
+    desc: "자재 발주·구매 관리",
+    icon: "deal",
+    tone: "teal",
+    href: "/portal/app/order",
+    ready: false,
+    launcher: true,
+  },
+  {
     key: "finance",
     label: "정산OS",
     desc: "수납·잔금·인센티브 관리",
