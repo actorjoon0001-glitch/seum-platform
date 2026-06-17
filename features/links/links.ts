@@ -26,6 +26,13 @@ export const appLinks: AppLink[] = [
     description: "세움 운영 시스템 대시보드",
     category: "운영",
   },
+  {
+    id: "exhibition-model-collect",
+    title: "전시장 모델 취합",
+    url: "https://seum-ed.netlify.app/",
+    description: "전시장별 보유 모델 정보 입력·취합",
+    category: "전시장",
+  },
   // 여기에 링크를 하나씩 추가합니다. 예:
   // {
   //   id: "supabase",
