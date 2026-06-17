@@ -19,6 +19,13 @@ export type AppLink = {
 };
 
 export const appLinks: AppLink[] = [
+  {
+    id: "seum-os",
+    title: "세움 OS",
+    url: "https://seum-os.netlify.app/dashboard.html",
+    description: "세움 운영 시스템 대시보드",
+    category: "운영",
+  },
   // 여기에 링크를 하나씩 추가합니다. 예:
   // {
   //   id: "supabase",
