@@ -156,6 +156,17 @@ export const SYSTEMS: SystemCard[] = [
     ready: true,
     launcher: true,
   },
+  {
+    key: "home-planner",
+    label: "3D홈플래너",
+    desc: "온라인 3D 주택 설계·배치 도구",
+    icon: "home",
+    tone: "blue",
+    href: "/portal/app/home-planner",
+    serviceUrl: "https://seum-home-planner.netlify.app/",
+    ready: true,
+    launcher: true,
+  },
   // 보조 진입점(런처 카드 아님 · 상단 메뉴에서 진입)
   {
     key: "manual",
