@@ -145,6 +145,17 @@ export const SYSTEMS: SystemCard[] = [
     ready: false,
     launcher: true,
   },
+  {
+    key: "exhibition",
+    label: "전시장 모델 취합",
+    desc: "전시장별 보유 모델 정보 입력·취합",
+    icon: "task",
+    tone: "violet",
+    href: "/portal/app/exhibition",
+    serviceUrl: "https://seum-ed.netlify.app/",
+    ready: true,
+    launcher: true,
+  },
   // 보조 진입점(런처 카드 아님 · 상단 메뉴에서 진입)
   {
     key: "manual",
