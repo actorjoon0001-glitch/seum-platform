@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Icon } from "./icons";
 import { useRole } from "./PortalProvider";
@@ -29,12 +29,18 @@ export function SystemLauncher() {
   const [openTabs, setOpenTabs] = useState<SystemCard[]>([]);
   const [activeKey, setActiveKey] = useState<string | null>(null);
 
+  // popstate 핸들러에서 최신 상태를 읽기 위한 ref
+  const openTabsRef = useRef(openTabs);
+  const activeKeyRef = useRef(activeKey);
+  openTabsRef.current = openTabs;
+  activeKeyRef.current = activeKey;
+
   const openService = (s: SystemCard) => {
     setOpenTabs((prev) => (prev.some((p) => p.key === s.key) ? prev : [...prev, s]));
     setActiveKey(s.key);
   };
 
-  const closeTab = (key: string) => {
+  const closeTab = useCallback((key: string) => {
     setOpenTabs((prev) => {
       const next = prev.filter((p) => p.key !== key);
       setActiveKey((curr) =>
@@ -42,28 +48,48 @@ export function SystemLauncher() {
       );
       return next;
     });
-  };
+  }, []);
 
-  const closeAll = () => {
+  const closeAll = useCallback(() => {
     setOpenTabs([]);
     setActiveKey(null);
-  };
+  }, []);
+
+  const overlayOpen = openTabs.length > 0;
+
+  // 브라우저 "뒤로 가기" → 포털을 벗어나지 않고 현재 탭만 닫는다.
+  // 오버레이가 열리면 히스토리 가드를 하나 쌓고, popstate 때 활성 탭을 닫은 뒤
+  // 남은 탭이 있으면 가드를 다시 쌓아 다음 뒤로가기도 한 탭씩 닫히게 한다.
+  useEffect(() => {
+    if (!overlayOpen) return;
+    window.history.pushState({ seumOverlay: true }, "");
+    const onPop = () => {
+      const tabs = openTabsRef.current;
+      if (tabs.length === 0) return;
+      const key = activeKeyRef.current ?? tabs[tabs.length - 1].key;
+      const remaining = tabs.filter((t) => t.key !== key);
+      setOpenTabs(remaining);
+      setActiveKey(remaining.length ? remaining[remaining.length - 1].key : null);
+      if (remaining.length > 0) window.history.pushState({ seumOverlay: true }, "");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [overlayOpen]);
 
   // 오버레이가 열린 동안 배경 스크롤 잠금 + ESC 로 현재 탭 닫기
   useEffect(() => {
-    if (openTabs.length === 0) return;
+    if (!overlayOpen) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && activeKey) closeTab(activeKey);
+      if (e.key === "Escape" && activeKeyRef.current) closeTab(activeKeyRef.current);
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKey);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openTabs.length, activeKey]);
+  }, [overlayOpen, closeTab]);
 
   const activeTab = openTabs.find((t) => t.key === activeKey) ?? null;
 
