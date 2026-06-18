@@ -34,16 +34,17 @@ export function SystemLauncher() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {systems.map((s) => {
           const t = TONE[s.tone];
-          // 연결된(ready) 서비스는 새 탭에서 실제 사이트를 직접 연다.
-          // 준비중 카드는 기존처럼 내부 안내 페이지로 이동한다.
-          const external = s.ready && Boolean(s.serviceUrl);
-          const cardClass = `group flex items-center gap-4 rounded-xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md ${
-            s.featured
-              ? "border-seum-200 bg-seum-50/50 ring-1 ring-seum-100"
-              : "border-neutral-200 bg-white hover:border-seum-200"
-          }`;
-          const inner = (
-            <>
+          // 카드 클릭 시 포털 안에서 해당 서비스를 꽉 찬 사이즈로 임베드한다.
+          return (
+            <Link
+              key={s.key}
+              href={s.href}
+              className={`group flex items-center gap-4 rounded-xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md ${
+                s.featured
+                  ? "border-seum-200 bg-seum-50/50 ring-1 ring-seum-100"
+                  : "border-neutral-200 bg-white hover:border-seum-200"
+              }`}
+            >
               <span
                 className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-4 ring-transparent transition ${t.box} ${t.hoverIcon} ${t.ring} group-hover:text-white`}
               >
@@ -62,23 +63,8 @@ export function SystemLauncher() {
               </div>
               <span className="flex items-center gap-1 text-xs font-medium text-neutral-300 transition group-hover:text-seum-600">
                 바로가기
-                <Icon name={external ? "expand" : "arrow"} size={14} />
+                <Icon name="arrow" size={14} />
               </span>
-            </>
-          );
-          return external ? (
-            <a
-              key={s.key}
-              href={s.serviceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cardClass}
-            >
-              {inner}
-            </a>
-          ) : (
-            <Link key={s.key} href={s.href} className={cardClass}>
-              {inner}
             </Link>
           );
         })}
