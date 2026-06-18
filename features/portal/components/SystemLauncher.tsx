@@ -35,12 +35,22 @@ export function SystemLauncher() {
   openTabsRef.current = openTabs;
   activeKeyRef.current = activeKey;
 
+  // 탭 전환 기록 — 뒤로 가기로 이전에 보던 탭으로 돌아가기 위함
+  const viewHistoryRef = useRef<string[]>([]);
+
+  const activate = useCallback((key: string) => {
+    setActiveKey(key);
+    const h = viewHistoryRef.current;
+    if (h[h.length - 1] !== key) h.push(key);
+  }, []);
+
   const openService = (s: SystemCard) => {
     setOpenTabs((prev) => (prev.some((p) => p.key === s.key) ? prev : [...prev, s]));
-    setActiveKey(s.key);
+    activate(s.key);
   };
 
   const closeTab = useCallback((key: string) => {
+    viewHistoryRef.current = viewHistoryRef.current.filter((k) => k !== key);
     setOpenTabs((prev) => {
       const next = prev.filter((p) => p.key !== key);
       setActiveKey((curr) =>
@@ -51,45 +61,45 @@ export function SystemLauncher() {
   }, []);
 
   const closeAll = useCallback(() => {
+    viewHistoryRef.current = [];
     setOpenTabs([]);
     setActiveKey(null);
   }, []);
 
   const overlayOpen = openTabs.length > 0;
 
-  // 브라우저 "뒤로 가기" → 포털을 벗어나지 않고 현재 탭만 닫는다.
-  // 오버레이가 열리면 히스토리 가드를 하나 쌓고, popstate 때 활성 탭을 닫은 뒤
-  // 남은 탭이 있으면 가드를 다시 쌓아 다음 뒤로가기도 한 탭씩 닫히게 한다.
+  // 브라우저 "뒤로 가기" → 탭을 닫지 않고 이전에 보던 탭으로 전환한다.
+  // 탭 제거는 오직 ✕ 또는 '전체 닫기'로만. 포털도 벗어나지 않는다.
   useEffect(() => {
     if (!overlayOpen) return;
     window.history.pushState({ seumOverlay: true }, "");
     const onPop = () => {
       const tabs = openTabsRef.current;
       if (tabs.length === 0) return;
-      const key = activeKeyRef.current ?? tabs[tabs.length - 1].key;
-      const remaining = tabs.filter((t) => t.key !== key);
-      setOpenTabs(remaining);
-      setActiveKey(remaining.length ? remaining[remaining.length - 1].key : null);
-      if (remaining.length > 0) window.history.pushState({ seumOverlay: true }, "");
+      const h = viewHistoryRef.current;
+      // 현재 탭을 기록에서 빼고, 아직 열려 있는 직전 탭으로 전환
+      if (h.length > 1) {
+        h.pop();
+        while (h.length && !tabs.some((t) => t.key === h[h.length - 1])) h.pop();
+        const prevKey = h.length ? h[h.length - 1] : tabs[tabs.length - 1].key;
+        setActiveKey(prevKey);
+      }
+      // 가드를 다시 쌓아 다음 뒤로 가기도 포털을 벗어나지 않게 한다
+      window.history.pushState({ seumOverlay: true }, "");
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [overlayOpen]);
 
-  // 오버레이가 열린 동안 배경 스크롤 잠금 + ESC 로 현재 탭 닫기
+  // 오버레이가 열린 동안 배경 스크롤 잠금
   useEffect(() => {
     if (!overlayOpen) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && activeKeyRef.current) closeTab(activeKeyRef.current);
-    };
-    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
     };
-  }, [overlayOpen, closeTab]);
+  }, [overlayOpen]);
 
   const activeTab = openTabs.find((t) => t.key === activeKey) ?? null;
 
@@ -164,7 +174,7 @@ export function SystemLauncher() {
                 >
                   <button
                     type="button"
-                    onClick={() => setActiveKey(tab.key)}
+                    onClick={() => activate(tab.key)}
                     className="flex items-center gap-1.5"
                   >
                     <Icon name={tab.icon} size={14} />
