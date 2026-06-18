@@ -1,10 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "./icons";
 import { useRole } from "./PortalProvider";
 import { launcherSystems } from "../config/systems";
-import type { Tone } from "../config/systems";
+import type { SystemCard, Tone } from "../config/systems";
 
 const TONE: Record<Tone, { box: string; hoverIcon: string; ring: string }> = {
   green: { box: "bg-seum-50 text-seum-600", hoverIcon: "group-hover:bg-seum-500", ring: "group-hover:ring-seum-200" },
@@ -22,6 +23,23 @@ const TONE: Record<Tone, { box: string; hoverIcon: string; ring: string }> = {
 export function SystemLauncher() {
   const { role } = useRole();
   const systems = launcherSystems(role);
+  // 연결된 서비스는 화면 전체를 덮는 오버레이로 임베드한다.
+  const [active, setActive] = useState<SystemCard | null>(null);
+
+  // 오버레이가 열려 있는 동안 배경 스크롤 잠금 + ESC 로 닫기
+  useEffect(() => {
+    if (!active) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActive(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [active]);
 
   return (
     <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
@@ -34,17 +52,13 @@ export function SystemLauncher() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {systems.map((s) => {
           const t = TONE[s.tone];
-          // 카드 클릭 시 포털 안에서 해당 서비스를 꽉 찬 사이즈로 임베드한다.
-          return (
-            <Link
-              key={s.key}
-              href={s.href}
-              className={`group flex items-center gap-4 rounded-xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md ${
-                s.featured
-                  ? "border-seum-200 bg-seum-50/50 ring-1 ring-seum-100"
-                  : "border-neutral-200 bg-white hover:border-seum-200"
-              }`}
-            >
+          const cardClass = `group flex items-center gap-4 rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+            s.featured
+              ? "border-seum-200 bg-seum-50/50 ring-1 ring-seum-100"
+              : "border-neutral-200 bg-white hover:border-seum-200"
+          }`;
+          const inner = (
+            <>
               <span
                 className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-4 ring-transparent transition ${t.box} ${t.hoverIcon} ${t.ring} group-hover:text-white`}
               >
@@ -65,10 +79,48 @@ export function SystemLauncher() {
                 바로가기
                 <Icon name="arrow" size={14} />
               </span>
+            </>
+          );
+
+          // 연결된(ready) 서비스 → 전체화면 오버레이로 임베드
+          // 준비중 → 기존 내부 안내 페이지로 이동
+          return s.ready && s.serviceUrl ? (
+            <button key={s.key} type="button" onClick={() => setActive(s)} className={`${cardClass} w-full`}>
+              {inner}
+            </button>
+          ) : (
+            <Link key={s.key} href={s.href} className={cardClass}>
+              {inner}
             </Link>
           );
         })}
       </div>
+
+      {/* 전체화면 임베드 오버레이 (헤더까지 모두 덮음) */}
+      {active && active.serviceUrl && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+          <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-2.5">
+            <Icon name={active.icon} size={18} className="text-seum-600" />
+            <span className="font-bold text-neutral-900">{active.label}</span>
+            <a
+              href={active.serviceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto flex items-center gap-1 rounded-md border border-neutral-200 px-2.5 py-1 text-xs text-neutral-600 transition hover:border-seum-300 hover:text-seum-600"
+            >
+              <Icon name="expand" size={13} /> 새 탭으로 열기
+            </a>
+            <button
+              type="button"
+              onClick={() => setActive(null)}
+              className="flex items-center gap-1 rounded-md bg-neutral-900 px-3 py-1 text-xs font-medium text-white transition hover:bg-neutral-700"
+            >
+              <Icon name="logout" size={13} /> 닫기
+            </button>
+          </div>
+          <iframe src={active.serviceUrl} title={active.label} className="w-full flex-1" />
+        </div>
+      )}
     </section>
   );
 }
