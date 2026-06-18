@@ -28,6 +28,8 @@ export function SystemLauncher() {
   // 열린 탭의 iframe은 계속 마운트되어 전환해도 상태가 유지된다.
   const [openTabs, setOpenTabs] = useState<SystemCard[]>([]);
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  // 오버레이 안에서 다른 시스템을 추가로 열기 위한 "+ 시스템" 메뉴
+  const [adderOpen, setAdderOpen] = useState(false);
 
   // popstate 핸들러에서 최신 열린 탭 목록을 읽기 위한 ref
   const openTabsRef = useRef(openTabs);
@@ -93,6 +95,8 @@ export function SystemLauncher() {
   }, [overlayOpen]);
 
   const activeTab = openTabs.find((t) => t.key === activeKey) ?? null;
+  // "+ 시스템" 메뉴에 띄울 연결된 시스템 목록
+  const addable = systems.filter((s) => s.ready && s.serviceUrl);
 
   return (
     <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
@@ -181,6 +185,47 @@ export function SystemLauncher() {
                   </button>
                 </div>
               ))}
+
+              {/* + 시스템 추가 (오버레이 안에서 다른 시스템 열기) */}
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setAdderOpen((v) => !v)}
+                  className="flex items-center gap-1 rounded-lg border border-dashed border-neutral-300 px-2.5 py-1.5 text-sm text-neutral-500 transition hover:border-seum-300 hover:text-seum-600"
+                >
+                  <Icon name="grid" size={14} /> 시스템 추가
+                </button>
+                {adderOpen && (
+                  <>
+                    <button
+                      type="button"
+                      aria-hidden
+                      onClick={() => setAdderOpen(false)}
+                      className="fixed inset-0 z-10 cursor-default"
+                    />
+                    <div className="absolute left-0 top-full z-20 mt-1 max-h-80 w-60 overflow-y-auto rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
+                      {addable.map((s) => {
+                        const opened = openTabs.some((t) => t.key === s.key);
+                        return (
+                          <button
+                            key={s.key}
+                            type="button"
+                            onClick={() => {
+                              openService(s);
+                              setAdderOpen(false);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-neutral-50"
+                          >
+                            <Icon name={s.icon} size={16} className="text-neutral-500" />
+                            <span className="flex-1 text-neutral-800">{s.label}</span>
+                            {opened && <span className="text-xs text-seum-600">열림</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {activeTab?.serviceUrl && (
