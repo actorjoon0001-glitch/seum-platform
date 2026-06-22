@@ -1,4 +1,3 @@
-import { SystemLauncher } from "@/features/portal/components/SystemLauncher";
 import { NoticeBoard } from "@/features/portal/components/NoticeBoard";
 import { TodaySchedule } from "@/features/portal/components/TodaySchedule";
 import { RecentUpdates } from "@/features/portal/components/RecentUpdates";
@@ -18,8 +17,7 @@ export default function PortalHome() {
         </p>
       </section>
 
-      {/* 1순위: 자주 사용하는 시스템 */}
-      <SystemLauncher />
+      {/* 시스템 진입은 상단 바 "시스템" 드롭다운에서 (메인 큰 런처는 제거) */}
 
       {/* 공지 · 일정 · 업데이트 · 내 정보 */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
