@@ -177,6 +177,16 @@ export const SYSTEMS: SystemCard[] = [
     launcher: true,
     roles: ["sales", "marketing"],
   },
+  {
+    key: "customer",
+    label: "고객관리OS",
+    desc: "고객 정보·상담 이력 통합 관리",
+    icon: "inquiry",
+    tone: "rose",
+    href: "/portal/app/customer",
+    ready: false,
+    launcher: true,
+  },
   // 보조 진입점(런처 카드 아님 · 상단 메뉴에서 진입)
   {
     key: "manual",
