@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "./icons";
-import { useRole, useSystems } from "./PortalProvider";
+import { useProfile, useRole, useSystems } from "./PortalProvider";
 import { NAV_MENU, UTIL_LINKS } from "../config/nav";
 import { ROLES, roleLabel } from "../config/roles";
 import type { Role } from "../config/roles";
@@ -15,6 +15,7 @@ import { profile } from "../data/mock";
 export function PortalChrome() {
   const { role, setRole } = useRole();
   const { openService } = useSystems();
+  const { profile: me } = useProfile();
   const pathname = usePathname();
   const router = useRouter();
   const [roleOpen, setRoleOpen] = useState(false);
@@ -88,18 +89,17 @@ export function PortalChrome() {
 
             <div className="ml-1 flex items-center gap-3 border-l border-neutral-200 pl-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-seum-100 text-sm font-bold text-seum-700">
-                {profile.name.slice(1, 2)}
+                {(me?.name ?? "·").charAt(0)}
               </span>
               <div className="hidden text-right leading-tight sm:block">
                 <p className="text-sm font-semibold text-neutral-800">
-                  {profile.name} {profile.rank}
-                  <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-seum-50 px-1.5 py-0.5 text-[10px] font-medium text-seum-600">
-                    <span className="h-1.5 w-1.5 rounded-full bg-seum-500" />
-                    {profile.status}
-                  </span>
+                  {me?.name ?? "불러오는 중…"}
+                  {me?.positionName && (
+                    <span className="ml-1 font-normal text-neutral-500">{me.positionName}</span>
+                  )}
                 </p>
                 <p className="text-[11px] text-neutral-400">
-                  {profile.dept} · {roleLabel(role)}
+                  {[me?.team, me?.permission].filter(Boolean).join(" · ") || me?.email}
                 </p>
               </div>
               <button

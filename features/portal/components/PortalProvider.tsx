@@ -43,6 +43,35 @@ export function useSystems(): SystemsCtx {
   return ctx;
 }
 
+/* ── 로그인 사용자 프로필(세움OS employees) 컨텍스트 ── */
+export interface EmployeeProfile {
+  name: string;
+  team: string | null;
+  positionName: string | null;
+  permission: string | null;
+  showroom: string | null;
+  email: string | null;
+}
+/** employees 테이블에서 읽는 행 (DB 타입 미생성이라 로컬 정의) */
+interface EmployeeRow {
+  name: string | null;
+  team: string | null;
+  position_name: string | null;
+  permission: string | null;
+  showroom: string | null;
+  email: string | null;
+}
+interface ProfileCtx {
+  profile: EmployeeProfile | null;
+  loading: boolean;
+}
+const ProfileContext = createContext<ProfileCtx | null>(null);
+export function useProfile(): ProfileCtx {
+  const ctx = useContext(ProfileContext);
+  if (!ctx) throw new Error("useProfile must be used within PortalProvider");
+  return ctx;
+}
+
 /**
  * 포털 셸 + 역할/시스템 컨텍스트.
  * - 역할 스위처로 권한별 메뉴 노출을 미리본다(인증 전 임시).
@@ -56,6 +85,60 @@ export function PortalProvider({ children }: { children: ReactNode }) {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const openTabsRef = useRef(openTabs);
   openTabsRef.current = openTabs;
+
+  // 로그인 사용자의 세움OS employees 정보
+  const [profile, setProfile] = useState<EmployeeProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          if (active) setProfileLoading(false);
+          return;
+        }
+        const res = await supabase
+          .from("employees")
+          .select("name, team, position_name, permission, showroom, email")
+          .eq("auth_user_id", user.id)
+          .maybeSingle();
+        const data = res.data as EmployeeRow | null;
+        if (!active) return;
+        setProfile(
+          data
+            ? {
+                name: data.name ?? user.email ?? "사용자",
+                team: data.team ?? null,
+                positionName: data.position_name ?? null,
+                permission: data.permission ?? null,
+                showroom: data.showroom ?? null,
+                email: data.email ?? user.email ?? null,
+              }
+            : {
+                name: user.email ?? "사용자",
+                team: null,
+                positionName: null,
+                permission: null,
+                showroom: null,
+                email: user.email ?? null,
+              },
+        );
+      } catch {
+        // 인증/네트워크 오류 시 프로필 없음으로 둔다
+      } finally {
+        if (active) setProfileLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // 탭을 열거나 전환할 때마다 히스토리 항목을 쌓는다 → 뒤로/앞으로 = 탭 전환
   const activate = useCallback((key: string) => {
@@ -119,11 +202,13 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       <SystemsContext.Provider
         value={{ openTabs, activeKey, openService, activate, closeTab, closeAll }}
       >
-        <div className="min-h-screen bg-[#eef2ef] text-neutral-800">
-          <PortalChrome />
-          <main className="mx-auto max-w-[1600px] px-4 pb-12 pt-5 lg:px-6">{children}</main>
-        </div>
-        <SystemTabsOverlay />
+        <ProfileContext.Provider value={{ profile, loading: profileLoading }}>
+          <div className="min-h-screen bg-[#eef2ef] text-neutral-800">
+            <PortalChrome />
+            <main className="mx-auto max-w-[1600px] px-4 pb-12 pt-5 lg:px-6">{children}</main>
+          </div>
+          <SystemTabsOverlay />
+        </ProfileContext.Provider>
       </SystemsContext.Provider>
     </RoleContext.Provider>
   );
