@@ -4,17 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "./icons";
-import { useRole } from "./PortalProvider";
+import { useRole, useSystems } from "./PortalProvider";
 import { NAV_MENU } from "../config/nav";
 import { ROLES, roleLabel } from "../config/roles";
 import type { Role } from "../config/roles";
+import { launcherSystems } from "../config/systems";
 import { profile } from "../data/mock";
 
 /** 상단 고정 헤더(흰색 · 로고/프로필) + 그린 네비게이션 바 */
 export function PortalChrome() {
   const { role, setRole } = useRole();
+  const { openService } = useSystems();
   const pathname = usePathname();
   const [roleOpen, setRoleOpen] = useState(false);
+  const [systemsOpen, setSystemsOpen] = useState(false);
+  const launchers = launcherSystems(role);
 
   return (
     <header className="sticky top-0 z-40 shadow-sm">
@@ -105,6 +109,65 @@ export function PortalChrome() {
               );
             })}
           </ul>
+
+          {/* 시스템 바로 열기 드롭다운 (어느 페이지에서나 사용) */}
+          <div className="relative ml-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setSystemsOpen((v) => !v)}
+              className="flex items-center gap-1.5 rounded-md bg-seum-700/70 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-seum-700"
+            >
+              <Icon name="grid" size={14} />
+              시스템
+              <Icon name="chevron" size={14} />
+            </button>
+            {systemsOpen && (
+              <>
+                <button
+                  type="button"
+                  aria-hidden
+                  onClick={() => setSystemsOpen(false)}
+                  className="fixed inset-0 z-40 cursor-default"
+                />
+                <div className="absolute right-0 top-full z-50 mt-1 max-h-[70vh] w-60 overflow-y-auto rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
+                  {launchers.map((s) => {
+                    const ready = s.ready && s.serviceUrl;
+                    const content = (
+                      <>
+                        <Icon name={s.icon} size={16} className="text-neutral-500" />
+                        <span className="flex-1 text-neutral-800">{s.label}</span>
+                        {!ready && <span className="text-[11px] text-neutral-400">준비중</span>}
+                      </>
+                    );
+                    const rowClass =
+                      "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-seum-50";
+                    return ready ? (
+                      <button
+                        key={s.key}
+                        type="button"
+                        onClick={() => {
+                          openService(s);
+                          setSystemsOpen(false);
+                        }}
+                        className={rowClass}
+                      >
+                        {content}
+                      </button>
+                    ) : (
+                      <Link
+                        key={s.key}
+                        href={s.href}
+                        onClick={() => setSystemsOpen(false)}
+                        className={rowClass}
+                      >
+                        {content}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* 역할 미리보기 스위처 (인증 전 임시) */}
           <div className="relative ml-2 shrink-0">
