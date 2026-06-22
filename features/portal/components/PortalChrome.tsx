@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "./icons";
 import { useRole, useSystems } from "./PortalProvider";
@@ -16,9 +16,21 @@ export function PortalChrome() {
   const { role, setRole } = useRole();
   const { openService } = useSystems();
   const pathname = usePathname();
+  const router = useRouter();
   const [roleOpen, setRoleOpen] = useState(false);
   const [systemsOpen, setSystemsOpen] = useState(false);
   const launchers = launcherSystems(role);
+
+  async function handleLogout() {
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      await createClient().auth.signOut();
+    } catch {
+      // 인증 미설정 등으로 실패해도 로그인 화면으로 이동
+    }
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-40 shadow-sm">
@@ -93,6 +105,7 @@ export function PortalChrome() {
               <button
                 type="button"
                 aria-label="로그아웃"
+                onClick={handleLogout}
                 className="rounded-lg p-2 text-neutral-400 transition hover:bg-rose-50 hover:text-rose-500"
               >
                 <Icon name="logout" size={18} />
