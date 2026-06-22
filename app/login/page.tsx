@@ -24,13 +24,15 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        setError("이메일 또는 비밀번호를 확인해 주세요.");
+        // 진단을 위해 실제 오류 메시지를 그대로 표시한다.
+        setError(`${error.message}${error.status ? ` (${error.status})` : ""}`);
         return;
       }
       router.push("/portal");
       router.refresh();
-    } catch {
-      setError("로그인 설정이 완료되지 않았습니다. 관리자에게 문의해 주세요.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(`로그인 설정 오류: ${msg}`);
     } finally {
       setLoading(false);
     }
