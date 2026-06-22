@@ -97,3 +97,21 @@ export const recentUpdates: UpdateItem[] = [
   { id: 5, system: "시공OS", text: "현장 사진 업로드 용량 제한이 확대되었습니다", date: "2026-06-05", tag: "개선" },
   { id: 6, system: "정산OS", text: "인센티브 정산 내역 엑셀 내보내기 추가", date: "2026-06-04", tag: "신규" },
 ];
+
+export type NewsCategory = "소식" | "보도" | "이야기";
+
+export interface NewsItem {
+  id: number;
+  category: NewsCategory;
+  title: string;
+  date: string;
+}
+
+/** 세움 소식 — 회사 소식/보도/이야기 (목 데이터) */
+export const companyNews: NewsItem[] = [
+  { id: 1, category: "보도", title: "세움디자인하우징, 친환경 모듈러 주택 신모델 출시", date: "2026-06-09" },
+  { id: 2, category: "소식", title: "본사 전시동 리뉴얼 오픈 안내", date: "2026-06-06" },
+  { id: 3, category: "이야기", title: "고객 입주 후기 — 양평 전원주택 이야기", date: "2026-06-04" },
+  { id: 4, category: "보도", title: "2026 상반기 모듈러 건축 박람회 참가", date: "2026-06-02" },
+  { id: 5, category: "소식", title: "여름맞이 모델하우스 방문 이벤트 진행", date: "2026-05-30" },
+];
