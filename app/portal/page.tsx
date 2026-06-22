@@ -2,8 +2,9 @@ import { NoticeBoard } from "@/features/portal/components/NoticeBoard";
 import { TodaySchedule } from "@/features/portal/components/TodaySchedule";
 import { RecentUpdates } from "@/features/portal/components/RecentUpdates";
 import { MyInfoCard } from "@/features/portal/components/MyInfoCard";
+import { CompanyNews } from "@/features/portal/components/CompanyNews";
 
-/** 세움 플랫폼 메인 — 회사 포털 + 업무 시스템 런처 허브 */
+/** 세움 플랫폼 메인 — 회사 포털 허브 (공지·소식·일정·업데이트·내 정보) */
 export default function PortalHome() {
   return (
     <div className="space-y-5">
@@ -17,26 +18,22 @@ export default function PortalHome() {
         </p>
       </section>
 
-      {/* 시스템 진입은 상단 바 "시스템" 드롭다운에서 (메인 큰 런처는 제거) */}
-
-      {/* 공지 · 일정 · 업데이트 · 내 정보 */}
+      {/* 1행: 공지사항(2) + 내 정보(1) */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {/* 좌측 2/3: 공지사항 + 최근 업데이트 */}
-        <div className="flex flex-col gap-5 lg:col-span-2">
-          <div id="notices" className="scroll-mt-32">
-            <NoticeBoard />
-          </div>
-          <div id="updates" className="scroll-mt-32">
-            <RecentUpdates />
-          </div>
+        <div id="notices" className="scroll-mt-32 lg:col-span-2">
+          <NoticeBoard />
         </div>
+        <MyInfoCard />
+      </div>
 
-        {/* 우측 1/3: 내 정보 + 오늘 일정 */}
-        <div className="flex flex-col gap-5">
-          <MyInfoCard />
-          <div id="schedule" className="scroll-mt-32">
-            <TodaySchedule />
-          </div>
+      {/* 2행: 세움 소식 + 최근 업데이트 + 오늘 일정 */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <CompanyNews />
+        <div id="updates" className="scroll-mt-32">
+          <RecentUpdates />
+        </div>
+        <div id="schedule" className="scroll-mt-32">
+          <TodaySchedule />
         </div>
       </div>
     </div>

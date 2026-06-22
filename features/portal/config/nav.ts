@@ -21,3 +21,21 @@ export const NAV_MENU: NavItem[] = [
   { label: "자료실", href: "/portal/app/archive", icon: "archive" },
   { label: "업데이트 내역", href: "/portal#updates", icon: "update" },
 ];
+
+/**
+ * 상단 유틸리티 바 링크 (헤더 맨 위 작은 바로가기).
+ * - external: 새 탭으로 열기. href "#" 는 추후 실제 주소로 교체.
+ */
+export interface UtilLink {
+  label: string;
+  href: string;
+  external?: boolean;
+}
+
+export const UTIL_LINKS: UtilLink[] = [
+  { label: "메일", href: "https://mail.google.com", external: true },
+  { label: "캘린더", href: "https://calendar.google.com", external: true },
+  { label: "드라이브", href: "https://drive.google.com", external: true },
+  { label: "사용 가이드", href: "#" },
+  { label: "헬프데스크", href: "#" },
+];

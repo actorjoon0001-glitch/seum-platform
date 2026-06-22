@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "./icons";
 import { useRole, useSystems } from "./PortalProvider";
-import { NAV_MENU } from "../config/nav";
+import { NAV_MENU, UTIL_LINKS } from "../config/nav";
 import { ROLES, roleLabel } from "../config/roles";
 import type { Role } from "../config/roles";
 import { launcherSystems } from "../config/systems";
@@ -22,6 +22,22 @@ export function PortalChrome() {
 
   return (
     <header className="sticky top-0 z-40 shadow-sm">
+      {/* 최상단 유틸리티 바 */}
+      <div className="border-b border-neutral-100 bg-neutral-50">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-3 px-4 py-1 text-[11px] text-neutral-500 lg:px-6">
+          {UTIL_LINKS.map((l) => (
+            <a
+              key={l.label}
+              href={l.href}
+              {...(l.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className="transition hover:text-seum-600"
+            >
+              {l.label}
+            </a>
+          ))}
+        </div>
+      </div>
+
       {/* 상단 흰색 바 */}
       <div className="bg-white">
         <div className="mx-auto flex max-w-[1600px] items-center gap-4 px-4 py-2.5 lg:px-6">
