@@ -184,7 +184,8 @@ export const SYSTEMS: SystemCard[] = [
     icon: "inquiry",
     tone: "rose",
     href: "/portal/app/customer",
-    ready: false,
+    serviceUrl: "https://seum-crm-os.netlify.app/",
+    ready: true,
     launcher: true,
   },
   // 보조 진입점(런처 카드 아님 · 상단 메뉴에서 진입)
