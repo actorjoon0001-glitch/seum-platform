@@ -87,6 +87,17 @@ export const SYSTEMS: SystemCard[] = [
     launcher: true,
   },
   {
+    key: "customer",
+    label: "고객관리OS",
+    desc: "고객 정보·상담 이력 통합 관리",
+    icon: "inquiry",
+    tone: "rose",
+    href: "/portal/app/customer",
+    serviceUrl: "https://seum-crm-os.netlify.app/",
+    ready: true,
+    launcher: true,
+  },
+  {
     key: "design",
     label: "설계OS",
     desc: "도면·허가·설계 검토 관리",
@@ -176,17 +187,6 @@ export const SYSTEMS: SystemCard[] = [
     ready: true,
     launcher: true,
     roles: ["sales", "marketing"],
-  },
-  {
-    key: "customer",
-    label: "고객관리OS",
-    desc: "고객 정보·상담 이력 통합 관리",
-    icon: "inquiry",
-    tone: "rose",
-    href: "/portal/app/customer",
-    serviceUrl: "https://seum-crm-os.netlify.app/",
-    ready: true,
-    launcher: true,
   },
   // 보조 진입점(런처 카드 아님 · 상단 메뉴에서 진입)
   {
