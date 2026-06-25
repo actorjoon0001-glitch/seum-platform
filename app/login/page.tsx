@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+const REMEMBER_KEY = "seum_remember_email";
 
 /**
  * 세움 플랫폼 로그인.
@@ -12,8 +15,18 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // 자동 로그인(이메일 기억): 저장된 이메일이 있으면 미리 채운다.
+  useEffect(() => {
+    const saved = localStorage.getItem(REMEMBER_KEY);
+    if (saved) {
+      setEmail(saved);
+      setRemember(true);
+    }
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,10 +37,11 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        // 진단을 위해 실제 오류 메시지를 그대로 표시한다.
         setError(`${error.message}${error.status ? ` (${error.status})` : ""}`);
         return;
       }
+      if (remember) localStorage.setItem(REMEMBER_KEY, email);
+      else localStorage.removeItem(REMEMBER_KEY);
       router.push("/portal");
       router.refresh();
     } catch (e) {
@@ -77,6 +91,24 @@ export default function LoginPage() {
             placeholder="비밀번호"
             className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none transition focus:border-seum-500 focus:ring-2 focus:ring-seum-100"
           />
+
+          <div className="mt-3 flex items-center justify-between text-sm">
+            <label className="flex cursor-pointer items-center gap-2 text-neutral-600">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 text-seum-600 focus:ring-seum-500"
+              />
+              자동 로그인
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-neutral-500 transition hover:text-seum-600"
+            >
+              비밀번호 찾기
+            </Link>
+          </div>
 
           {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
 
