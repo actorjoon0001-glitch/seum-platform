@@ -1,17 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "./Card";
-import { notices } from "../data/mock";
-import type { NoticeTeam } from "../data/mock";
 
-const TABS: NoticeTeam[] = ["전체", "영업팀", "설계팀", "시공팀", "정산팀", "마케팅팀"];
+interface Announcement {
+  id: string;
+  title: string | null;
+  created_at: string | null;
+  important: boolean | null;
+  is_new: boolean | null;
+  created_by_name: string | null;
+  created_by_team: string | null;
+}
 
-/** 공지사항 — 팀별 탭, 최근 10개 (제목/작성자/날짜/조회여부) */
+/** 공지사항 — 세움OS announcements 실제 데이터, 팀 탭(자동), 최신순 */
 export function NoticeBoard() {
-  const [tab, setTab] = useState<NoticeTeam>("전체");
+  const [rows, setRows] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [tab, setTab] = useState("전체");
 
-  const list = (tab === "전체" ? notices : notices.filter((n) => n.team === tab)).slice(
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const res = await supabase
+          .from("announcements")
+          .select("id, title, created_at, important, is_new, created_by_name, created_by_team")
+          .order("created_at", { ascending: false })
+          .limit(30);
+        if (!active) return;
+        if (res.error) {
+          setError(true);
+        } else {
+          setRows((res.data ?? []) as Announcement[]);
+        }
+      } catch {
+        if (active) setError(true);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // 데이터에 존재하는 팀으로 탭 자동 구성
+  const tabs = useMemo(() => {
+    const teams = Array.from(
+      new Set(rows.map((r) => r.created_by_team).filter((t): t is string => !!t)),
+    );
+    return ["전체", ...teams];
+  }, [rows]);
+
+  const list = (tab === "전체" ? rows : rows.filter((r) => r.created_by_team === tab)).slice(
     0,
     10,
   );
@@ -19,7 +64,7 @@ export function NoticeBoard() {
   return (
     <Card title="공지사항" icon="notice">
       <div className="-mt-1 mb-2 flex flex-wrap gap-x-4 gap-y-1 border-b border-neutral-100 text-sm">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t}
             type="button"
@@ -34,40 +79,48 @@ export function NoticeBoard() {
           </button>
         ))}
       </div>
+
       <ul className="divide-y divide-neutral-100">
         {list.map((n) => (
           <li key={n.id}>
             <a href="#" className="group flex items-center gap-2 py-2.5 text-sm">
-              {n.pinned && (
+              {n.important && (
                 <span className="shrink-0 rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-500">
                   중요
                 </span>
               )}
-              {tab === "전체" && n.team !== "전체" && (
-                <span className="shrink-0 rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-500">
-                  {n.team}
+              {n.is_new && (
+                <span className="shrink-0 rounded bg-seum-50 px-1.5 py-0.5 text-[10px] font-bold text-seum-600">
+                  NEW
                 </span>
               )}
-              {!n.read && (
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-seum-500" aria-label="안 읽음" />
+              {tab === "전체" && n.created_by_team && (
+                <span className="hidden shrink-0 rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-500 sm:inline">
+                  {n.created_by_team}
+                </span>
               )}
-              <span
-                className={`min-w-0 flex-1 truncate transition group-hover:text-seum-600 ${
-                  n.read ? "text-neutral-500" : "font-semibold text-neutral-800"
-                }`}
-              >
-                {n.title}
+              <span className="min-w-0 flex-1 truncate font-medium text-neutral-800 transition group-hover:text-seum-600">
+                {n.title ?? "(제목 없음)"}
               </span>
               <span className="hidden shrink-0 text-xs text-neutral-400 sm:inline">
-                {n.author}
+                {n.created_by_name}
               </span>
               <span className="shrink-0 text-xs tabular-nums text-neutral-400">
-                {n.date.slice(5)}
+                {n.created_at ? n.created_at.slice(5) : ""}
               </span>
             </a>
           </li>
         ))}
-        {list.length === 0 && (
+
+        {loading && (
+          <li className="py-8 text-center text-sm text-neutral-400">공지를 불러오는 중…</li>
+        )}
+        {!loading && error && (
+          <li className="py-8 text-center text-sm text-neutral-400">
+            공지를 불러올 수 없습니다.
+          </li>
+        )}
+        {!loading && !error && list.length === 0 && (
           <li className="py-8 text-center text-sm text-neutral-400">공지가 없습니다.</li>
         )}
       </ul>
