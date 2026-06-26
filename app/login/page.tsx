@@ -53,7 +53,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#eef2ef] px-4 text-neutral-800">
+    <main className="flex min-h-screen items-center justify-center bg-[#eef2ef] px-4 text-neutral-800 [color-scheme:light]">
       <div className="w-full max-w-sm">
         {/* 로고 */}
         <div className="mb-7 text-center">
@@ -78,7 +78,7 @@ export default function LoginPage() {
             required
             autoComplete="email"
             placeholder="name@seum.co.kr"
-            className="mb-4 w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none transition focus:border-seum-500 focus:ring-2 focus:ring-seum-100"
+            className="mb-4 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-seum-500 focus:ring-2 focus:ring-seum-100"
           />
 
           <label className="mb-1 block text-sm font-medium text-neutral-700">비밀번호</label>
@@ -89,7 +89,7 @@ export default function LoginPage() {
             required
             autoComplete="current-password"
             placeholder="비밀번호"
-            className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none transition focus:border-seum-500 focus:ring-2 focus:ring-seum-100"
+            className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-seum-500 focus:ring-2 focus:ring-seum-100"
           />
 
           <div className="mt-3 flex items-center justify-between text-sm">

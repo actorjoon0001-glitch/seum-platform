@@ -75,7 +75,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#eef2ef] px-4 text-neutral-800">
+    <main className="flex min-h-screen items-center justify-center bg-[#eef2ef] px-4 text-neutral-800 [color-scheme:light]">
       <div className="w-full max-w-sm">
         <div className="mb-7 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-seum-500 text-xl font-extrabold text-white shadow-sm">
@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
                 required
                 autoComplete="new-password"
                 placeholder="6자 이상"
-                className="mb-4 w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none transition focus:border-seum-500 focus:ring-2 focus:ring-seum-100"
+                className="mb-4 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-seum-500 focus:ring-2 focus:ring-seum-100"
               />
               <label className="mb-1 block text-sm font-medium text-neutral-700">새 비밀번호 확인</label>
               <input
@@ -121,7 +121,7 @@ export default function ResetPasswordPage() {
                 required
                 autoComplete="new-password"
                 placeholder="다시 입력"
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none transition focus:border-seum-500 focus:ring-2 focus:ring-seum-100"
+                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-seum-500 focus:ring-2 focus:ring-seum-100"
               />
 
               {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
