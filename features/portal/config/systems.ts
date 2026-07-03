@@ -54,7 +54,7 @@ export const SYSTEMS: SystemCard[] = [
   },
   {
     key: "catalog",
-    label: "온라인 카탈로그",
+    label: "상담용 카탈로그",
     desc: "모델·옵션·가격 안내",
     icon: "catalog",
     tone: "amber",
