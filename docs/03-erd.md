@@ -128,7 +128,7 @@
 | body | text not null | |
 | created_at | timestamptz | |
 
-### 2.3 카탈로그
+### 2.3 상담용 카탈로그
 
 #### `models` — 건축 모델
 | 컬럼 | 타입 | 설명 |
@@ -353,7 +353,7 @@ create policy "see members of my orgs" on members
 
 | 버킷 | 공개 | 경로 규칙 | 용도 |
 |------|------|-----------|------|
-| `model-images` | public | `org/{org_id}/models/{model_id}/{file}` | 카탈로그 이미지 |
+| `model-images` | public | `org/{org_id}/models/{model_id}/{file}` | 상담용 카탈로그 이미지 |
 | `quote-pdfs` | private | `org/{org_id}/quotes/{quote_id}.pdf` | 견적서 |
 | `contract-pdfs` | private | `org/{org_id}/contracts/{contract_id}.pdf` | 계약서 |
 | `project-photos` | private | `org/{org_id}/projects/{project_id}/{file}` | 시공 사진 |
