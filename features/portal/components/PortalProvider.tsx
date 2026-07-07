@@ -11,7 +11,7 @@ import {
 } from "react";
 import { DEFAULT_ROLE } from "../config/roles";
 import type { Role } from "../config/roles";
-import type { SystemCard } from "../config/systems";
+import { SYSTEMS, type SystemCard } from "../config/systems";
 import { PortalChrome } from "./PortalChrome";
 import { SystemTabsOverlay } from "./SystemTabsOverlay";
 
@@ -170,6 +170,52 @@ export function PortalProvider({ children }: { children: ReactNode }) {
   const closeAll = useCallback(() => {
     setOpenTabs([]);
     setActiveKey(null);
+  }, []);
+
+  // SSO: 임베드된 시스템(iframe)이 'seum-sso:ready'를 보내면, 현재 포털 로그인
+  // 세션 토큰을 그 시스템 origin으로 돌려준다 → 시스템이 재로그인 없이 자동 로그인.
+  // (같은 Supabase 프로젝트를 공유하므로 토큰 전달만으로 세션 복원 가능)
+  useEffect(() => {
+    let removed = false;
+    let cleanup = () => {};
+    (async () => {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      // 토큰을 넘겨줄 신뢰 origin = 연결된(ready) 시스템들의 origin
+      const allowed = new Set(
+        SYSTEMS.filter((s) => s.ready && s.serviceUrl)
+          .map((s) => {
+            try {
+              return new URL(s.serviceUrl as string).origin;
+            } catch {
+              return null;
+            }
+          })
+          .filter((o): o is string => !!o),
+      );
+      const onMessage = async (e: MessageEvent) => {
+        if (!allowed.has(e.origin)) return; // 우리 시스템이 보낸 것만
+        if ((e.data as { type?: string } | null)?.type !== "seum-sso:ready") return;
+        const { data } = await supabase.auth.getSession();
+        const session = data.session;
+        if (!session) return; // 로그인 안 돼 있으면 무시 → 시스템 자체 로그인 표시
+        (e.source as Window | null)?.postMessage(
+          {
+            type: "seum-sso:token",
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          },
+          e.origin,
+        );
+      };
+      if (removed) return;
+      window.addEventListener("message", onMessage);
+      cleanup = () => window.removeEventListener("message", onMessage);
+    })();
+    return () => {
+      removed = true;
+      cleanup();
+    };
   }, []);
 
   // 브라우저 뒤로/앞으로 = 탭 전환. 오버레이 이전 히스토리로 나가면 닫기.
