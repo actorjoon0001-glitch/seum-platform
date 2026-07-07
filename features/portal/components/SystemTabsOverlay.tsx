@@ -72,6 +72,34 @@ export function SystemTabsOverlay() {
               <div className="absolute right-0 top-full z-20 mt-1 max-h-80 w-60 overflow-y-auto rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
                 {addable.map((s) => {
                   const opened = openTabs.some((t) => t.key === s.key);
+                  const rowClass =
+                    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-neutral-50";
+                  const inner = (
+                    <>
+                      <Icon name={s.icon} size={16} className="text-neutral-500" />
+                      <span className="flex-1 text-neutral-800">{s.label}</span>
+                      {s.openInNewTab ? (
+                        <span className="text-xs text-neutral-400">새 탭</span>
+                      ) : (
+                        opened && <span className="text-xs text-seum-600">열림</span>
+                      )}
+                    </>
+                  );
+                  // openInNewTab → 임베드 대신 새 탭으로 열기
+                  if (s.openInNewTab && s.serviceUrl) {
+                    return (
+                      <a
+                        key={s.key}
+                        href={s.serviceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setAdderOpen(false)}
+                        className={rowClass}
+                      >
+                        {inner}
+                      </a>
+                    );
+                  }
                   return (
                     <button
                       key={s.key}
@@ -80,11 +108,9 @@ export function SystemTabsOverlay() {
                         openService(s);
                         setAdderOpen(false);
                       }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-neutral-50"
+                      className={rowClass}
                     >
-                      <Icon name={s.icon} size={16} className="text-neutral-500" />
-                      <span className="flex-1 text-neutral-800">{s.label}</span>
-                      {opened && <span className="text-xs text-seum-600">열림</span>}
+                      {inner}
                     </button>
                   );
                 })}

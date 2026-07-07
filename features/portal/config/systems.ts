@@ -37,6 +37,11 @@ export interface SystemCard {
   launcher: boolean;
   /** 세움OS처럼 강조(허브) 표시 */
   featured?: boolean;
+  /**
+   * true면 임베드(iframe) 대신 새 탭으로 연다.
+   * 로그인이 필요한데 iframe 서드파티 쿠키 차단으로 로그인이 안 되는 시스템용.
+   */
+  openInNewTab?: boolean;
 }
 
 export const SYSTEMS: SystemCard[] = [
@@ -108,6 +113,8 @@ export const SYSTEMS: SystemCard[] = [
     ready: true,
     launcher: true,
     roles: ["design"],
+    // 로그인 앱 + iframe 쿠키 차단 → 임베드 대신 새 탭으로 연다.
+    openInNewTab: true,
   },
   {
     key: "construction",
