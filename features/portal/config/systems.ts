@@ -113,8 +113,6 @@ export const SYSTEMS: SystemCard[] = [
     ready: true,
     launcher: true,
     roles: ["design"],
-    // 로그인 앱 + iframe 쿠키 차단 → 임베드 대신 새 탭으로 연다.
-    openInNewTab: true,
   },
   {
     key: "construction",
