@@ -170,6 +170,21 @@ export function PortalChrome() {
                     );
                     const rowClass =
                       "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-seum-50";
+                    // openInNewTab → 새 탭으로 열기 (임베드 안 함)
+                    if (s.openInNewTab && s.serviceUrl) {
+                      return (
+                        <a
+                          key={s.key}
+                          href={s.serviceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setSystemsOpen(false)}
+                          className={rowClass}
+                        >
+                          {content}
+                        </a>
+                      );
+                    }
                     return ready ? (
                       <button
                         key={s.key}
