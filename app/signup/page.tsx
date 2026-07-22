@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation";
 /** 소속 전시장 (저장값=코드 / 표시=한글) — 세움OS employees.showroom 과 동일 */
 const SHOWROOMS = [
   { value: "headquarters", label: "본사" },
+  { value: "showroom1", label: "1전시장" },
+  { value: "showroom3", label: "3전시장" },
   { value: "ganghwa", label: "강화전시장" },
   { value: "andong", label: "안동전시장" },
   { value: "gwangju", label: "광주전시장" },
-  { value: "showroom1", label: "1전시장" },
-  { value: "showroom3", label: "3전시장" },
 ];
 const TEAMS = ["경영", "마케팅", "설계", "시공", "영업", "정산"];
 
