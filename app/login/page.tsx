@@ -35,10 +35,25 @@ export default function LoginPage() {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setError(`${error.message}${error.status ? ` (${error.status})` : ""}`);
         return;
+      }
+      // 관리자 승인(approved)된 직원만 로그인 허용 (세움OS와 동일)
+      const uid = data.user?.id;
+      if (uid) {
+        const emp = await supabase
+          .from("employees")
+          .select("status")
+          .eq("auth_user_id", uid)
+          .maybeSingle();
+        const status = (emp.data as { status?: string } | null)?.status;
+        if (!emp.error && status && status !== "approved") {
+          await supabase.auth.signOut();
+          setError("가입 승인 대기 중입니다. 관리자 승인 후 이용할 수 있습니다.");
+          return;
+        }
       }
       if (remember) localStorage.setItem(REMEMBER_KEY, email);
       else localStorage.removeItem(REMEMBER_KEY);
@@ -122,6 +137,12 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-xs text-neutral-400">
             세움OS 계정(이메일/비밀번호)으로 로그인하세요.
+          </p>
+          <p className="mt-2 text-center text-xs text-neutral-500">
+            계정이 없으신가요?{" "}
+            <Link href="/signup" className="font-medium text-seum-600 hover:underline">
+              회원가입
+            </Link>
           </p>
         </form>
       </div>
