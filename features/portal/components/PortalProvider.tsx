@@ -51,6 +51,8 @@ export interface EmployeeProfile {
   permission: string | null;
   showroom: string | null;
   email: string | null;
+  phone: string | null;
+  avatarUrl: string | null;
 }
 /** employees 테이블에서 읽는 행 (DB 타입 미생성이라 로컬 정의) */
 interface EmployeeRow {
@@ -60,10 +62,12 @@ interface EmployeeRow {
   permission: string | null;
   showroom: string | null;
   email: string | null;
+  phone: string | null;
 }
 interface ProfileCtx {
   profile: EmployeeProfile | null;
   loading: boolean;
+  reload: () => Promise<void>;
 }
 const ProfileContext = createContext<ProfileCtx | null>(null);
 export function useProfile(): ProfileCtx {
@@ -90,55 +94,53 @@ export function PortalProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const { createClient } = await import("@/lib/supabase/client");
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          if (active) setProfileLoading(false);
-          return;
-        }
-        const res = await supabase
-          .from("employees")
-          .select("name, team, position_name, permission, showroom, email")
-          .eq("auth_user_id", user.id)
-          .maybeSingle();
-        const data = res.data as EmployeeRow | null;
-        if (!active) return;
-        setProfile(
-          data
-            ? {
-                name: data.name ?? user.email ?? "사용자",
-                team: data.team ?? null,
-                positionName: data.position_name ?? null,
-                permission: data.permission ?? null,
-                showroom: data.showroom ?? null,
-                email: data.email ?? user.email ?? null,
-              }
-            : {
-                name: user.email ?? "사용자",
-                team: null,
-                positionName: null,
-                permission: null,
-                showroom: null,
-                email: user.email ?? null,
-              },
-        );
-      } catch {
-        // 인증/네트워크 오류 시 프로필 없음으로 둔다
-      } finally {
-        if (active) setProfileLoading(false);
+  const loadProfile = useCallback(async () => {
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setProfile(null);
+        return;
       }
-    })();
-    return () => {
-      active = false;
-    };
+      const res = await supabase
+        .from("employees")
+        .select("name, team, position_name, permission, showroom, email, phone")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+      const data = res.data as EmployeeRow | null;
+      // avatar_url 은 컬럼이 아직 없을 수 있어 별도로(에러 무시) 조회한다.
+      let avatarUrl: string | null = null;
+      const av = await supabase
+        .from("employees")
+        .select("avatar_url")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+      if (!av.error) {
+        avatarUrl = (av.data as { avatar_url?: string | null } | null)?.avatar_url ?? null;
+      }
+      setProfile({
+        name: data?.name ?? user.email ?? "사용자",
+        team: data?.team ?? null,
+        positionName: data?.position_name ?? null,
+        permission: data?.permission ?? null,
+        showroom: data?.showroom ?? null,
+        email: data?.email ?? user.email ?? null,
+        phone: data?.phone ?? null,
+        avatarUrl,
+      });
+    } catch {
+      // 인증/네트워크 오류 시 프로필 없음으로 둔다
+    } finally {
+      setProfileLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   // 탭을 열거나 전환할 때마다 히스토리 항목을 쌓는다 → 뒤로/앞으로 = 탭 전환
   const activate = useCallback((key: string) => {
@@ -248,7 +250,9 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       <SystemsContext.Provider
         value={{ openTabs, activeKey, openService, activate, closeTab, closeAll }}
       >
-        <ProfileContext.Provider value={{ profile, loading: profileLoading }}>
+        <ProfileContext.Provider
+          value={{ profile, loading: profileLoading, reload: loadProfile }}
+        >
           <div className="min-h-screen bg-[#eef2ef] text-neutral-800">
             <PortalChrome />
             <main className="mx-auto max-w-[1600px] px-4 pb-12 pt-5 lg:px-6">{children}</main>

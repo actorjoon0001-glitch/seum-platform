@@ -88,8 +88,13 @@ export function PortalChrome() {
             </button>
 
             <div className="ml-1 flex items-center gap-3 border-l border-neutral-200 pl-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-seum-100 text-sm font-bold text-seum-700">
-                {(me?.name ?? "·").charAt(0)}
+              <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-seum-100 text-sm font-bold text-seum-700">
+                {me?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={me.avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (me?.name ?? "·").charAt(0)
+                )}
               </span>
               <div className="hidden text-right leading-tight sm:block">
                 <p className="text-sm font-semibold text-neutral-800">
