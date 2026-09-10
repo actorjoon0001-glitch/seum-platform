@@ -63,6 +63,7 @@ export default function OrgDirectoryPage() {
   const [rows, setRows] = useState<Emp[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Emp | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -119,14 +120,25 @@ export default function OrgDirectoryPage() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-neutral-200 bg-gradient-to-r from-seum-600 to-seum-500 px-6 py-6 text-white shadow-sm">
-        <h1 className="flex items-center gap-2 text-xl font-extrabold tracking-tight sm:text-2xl">
-          <Icon name="org" size={22} /> 세움 연락망
-        </h1>
-        <p className="mt-1 text-sm text-seum-50/90">
-          부서별 직원 연락처 (영업은 전시장별)
-          {isAdmin ? " · 관리자는 각 항목을 수정할 수 있습니다" : ""}
-        </p>
+      <section className="flex items-start justify-between gap-3 rounded-2xl border border-neutral-200 bg-gradient-to-r from-seum-600 to-seum-500 px-6 py-6 text-white shadow-sm">
+        <div>
+          <h1 className="flex items-center gap-2 text-xl font-extrabold tracking-tight sm:text-2xl">
+            <Icon name="org" size={22} /> 세움 연락망
+          </h1>
+          <p className="mt-1 text-sm text-seum-50/90">
+            부서별 직원 연락처 (영업은 전시장별)
+            {isAdmin ? " · 관리자는 직원 추가·수정·삭제가 가능합니다" : ""}
+          </p>
+        </div>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="shrink-0 rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/40 transition hover:bg-white/25"
+          >
+            + 직원 추가
+          </button>
+        )}
       </section>
 
       {loading ? (
@@ -196,8 +208,15 @@ export default function OrgDirectoryPage() {
         </div>
       )}
 
-      {isAdmin && editing && (
-        <EditModal emp={editing} onClose={() => setEditing(null)} onSaved={load} />
+      {isAdmin && (editing || creating) && (
+        <EditModal
+          emp={editing}
+          onClose={() => {
+            setEditing(null);
+            setCreating(false);
+          }}
+          onSaved={load}
+        />
       )}
     </div>
   );
@@ -208,37 +227,43 @@ function EditModal({
   onClose,
   onSaved,
 }: {
-  emp: Emp;
+  emp: Emp | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
-  const [name, setName] = useState(emp.name ?? "");
-  const [position, setPosition] = useState(emp.position_name ?? "");
-  const [team, setTeam] = useState(emp.team ?? "");
-  const [showroom, setShowroom] = useState(emp.showroom ?? "");
-  const [phone, setPhone] = useState(emp.phone ?? "");
+  const isNew = !emp;
+  const [name, setName] = useState(emp?.name ?? "");
+  const [position, setPosition] = useState(emp?.position_name ?? "");
+  const [team, setTeam] = useState(emp?.team ?? "");
+  const [showroom, setShowroom] = useState(emp?.showroom ?? "");
+  const [phone, setPhone] = useState(emp?.phone ?? "");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const inputClass =
     "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-seum-500 focus:ring-2 focus:ring-seum-100";
 
   async function save() {
+    if (!name.trim()) {
+      setError("이름을 입력하세요.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const res = await supabase
-        .from("employees")
-        .update({
-          name: name.trim() || null,
-          position_name: position.trim() || null,
-          team: team || null,
-          showroom: showroom || null,
-          phone: phone.trim() || null,
-        } as never)
-        .eq("id", emp.id);
+      const fields = {
+        name: name.trim() || null,
+        position_name: position.trim() || null,
+        team: team || null,
+        showroom: showroom || null,
+        phone: phone.trim() || null,
+      };
+      const res = isNew
+        ? await supabase.from("employees").insert({ ...fields, status: "approved" } as never)
+        : await supabase.from("employees").update(fields as never).eq("id", emp!.id);
       if (res.error) throw res.error;
       await onSaved();
       onClose();
@@ -249,11 +274,32 @@ function EditModal({
     }
   }
 
+  async function remove() {
+    if (!emp) return;
+    if (!window.confirm(`'${emp.name ?? "이 직원"}' 님을 연락망에서 삭제할까요?`)) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const res = await supabase.from("employees").delete().eq("id", emp.id);
+      if (res.error) throw res.error;
+      await onSaved();
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "삭제 실패");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-bold text-neutral-900">직원 정보 수정</h3>
+          <h3 className="text-base font-bold text-neutral-900">
+            {isNew ? "직원 추가" : "직원 정보 수정"}
+          </h3>
           <button
             type="button"
             onClick={onClose}
@@ -299,22 +345,36 @@ function EditModal({
 
         {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
 
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm text-neutral-600 transition hover:bg-neutral-100"
-          >
-            취소
-          </button>
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving}
-            className="rounded-lg bg-seum-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-seum-600 disabled:opacity-60"
-          >
-            {saving ? "저장 중…" : "저장"}
-          </button>
+        <div className="mt-5 flex items-center justify-between gap-2">
+          {!isNew ? (
+            <button
+              type="button"
+              onClick={remove}
+              disabled={deleting || saving}
+              className="rounded-lg px-3 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:opacity-60"
+            >
+              {deleting ? "삭제 중…" : "삭제"}
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-4 py-2 text-sm text-neutral-600 transition hover:bg-neutral-100"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving || deleting}
+              className="rounded-lg bg-seum-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-seum-600 disabled:opacity-60"
+            >
+              {saving ? "저장 중…" : isNew ? "추가" : "저장"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
