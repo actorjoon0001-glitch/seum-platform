@@ -9,7 +9,12 @@ interface NewsRow {
   category: string | null;
   title: string;
   created_at: string | null;
+  created_by_name: string | null;
+  created_by_team: string | null;
 }
+
+const BASE_COLS = "id, category, title, created_at";
+const FULL_COLS = "id, category, title, created_at, created_by_name, created_by_team";
 
 const CATEGORIES = ["소식", "보도", "이야기"];
 const CATEGORY_STYLE: Record<string, string> = {
@@ -18,7 +23,7 @@ const CATEGORY_STYLE: Record<string, string> = {
   이야기: "bg-amber-100 text-amber-700",
 };
 
-/** 세움 소식 — company_news 실데이터. admin/master는 글쓰기/삭제 가능. */
+/** 세움 소식 — company_news 실데이터. 누구나 글쓰기, 삭제는 admin/master. */
 export function CompanyNews() {
   const { profile } = useProfile();
   const isAdmin = ["admin", "master"].includes(profile?.permission ?? "");
@@ -35,11 +40,18 @@ export function CompanyNews() {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const res = await supabase
+      let res = await supabase
         .from("company_news")
-        .select("id, category, title, created_at")
+        .select(FULL_COLS)
         .order("created_at", { ascending: false })
         .limit(20);
+      if (res.error) {
+        res = await supabase
+          .from("company_news")
+          .select(BASE_COLS)
+          .order("created_at", { ascending: false })
+          .limit(20);
+      }
       setRows(res.error ? [] : ((res.data ?? []) as NewsRow[]));
     } catch {
       setRows([]);
@@ -59,9 +71,19 @@ export function CompanyNews() {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const res = await supabase
-        .from("company_news")
-        .insert({ category, title: title.trim() } as never);
+      const full = {
+        category,
+        title: title.trim(),
+        created_by_name: profile?.name ?? null,
+        created_by_team: profile?.team ?? null,
+      };
+      let res = await supabase.from("company_news").insert(full as never);
+      if (res.error) {
+        // 작성자 컬럼이 아직 없으면 최소 필드로 재시도
+        res = await supabase
+          .from("company_news")
+          .insert({ category, title: title.trim() } as never);
+      }
       if (res.error) throw res.error;
       setTitle("");
       setCategory("소식");
@@ -86,15 +108,13 @@ export function CompanyNews() {
       title="세움 소식"
       icon="notice"
       headerRight={
-        isAdmin && (
-          <button
-            type="button"
-            onClick={() => setAdding((v) => !v)}
-            className="rounded-md px-2 py-1 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-seum-600"
-          >
-            {adding ? "닫기" : "+ 글쓰기"}
-          </button>
-        )
+        <button
+          type="button"
+          onClick={() => setAdding((v) => !v)}
+          className="rounded-md px-2 py-1 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-seum-600"
+        >
+          {adding ? "닫기" : "+ 글쓰기"}
+        </button>
       }
     >
       {adding && (
@@ -139,6 +159,16 @@ export function CompanyNews() {
               {n.category ?? "소식"}
             </span>
             <span className="min-w-0 flex-1 truncate text-neutral-700">{n.title}</span>
+            {n.created_by_team && (
+              <span className="hidden shrink-0 rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-500 sm:inline">
+                {n.created_by_team}
+              </span>
+            )}
+            {n.created_by_name && (
+              <span className="hidden shrink-0 text-[11px] text-neutral-400 sm:inline">
+                {n.created_by_name}
+              </span>
+            )}
             <span className="shrink-0 text-[11px] tabular-nums text-neutral-400">
               {n.created_at ? n.created_at.slice(5, 10) : ""}
             </span>
