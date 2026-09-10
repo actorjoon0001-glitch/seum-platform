@@ -1,8 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "./Card";
 import { useProfile } from "./PortalProvider";
+import { ReadStat } from "./ReadStat";
+import {
+  getApprovedCount,
+  getContentReaders,
+  getMyContentReads,
+  recordContentRead,
+  type Reader,
+} from "./reads";
+
+const READ_TYPE = "news";
 
 interface NewsRow {
   id: string;
@@ -34,6 +44,9 @@ export function CompanyNews() {
   const [rows, setRows] = useState<NewsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState<NewsRow | null>(null);
+  const [total, setTotal] = useState(0);
+  const [readers, setReaders] = useState<Record<string, Reader[]>>({});
+  const [myReadSet, setMyReadSet] = useState<Set<string>>(new Set());
 
   const [adding, setAdding] = useState(false);
   const [category, setCategory] = useState("소식");
@@ -69,6 +82,34 @@ export function CompanyNews() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // 내가 읽은 소식(중복 방지)
+  useEffect(() => {
+    getMyContentReads(READ_TYPE).then(setMyReadSet);
+  }, []);
+
+  // 관리자: 전체 인원 + 소식별 읽은 사람
+  const ids = useMemo(() => rows.map((r) => r.id), [rows]);
+  const refreshReaders = useCallback(async () => {
+    if (!isAdmin || ids.length === 0) return;
+    setReaders(await getContentReaders(READ_TYPE, ids));
+  }, [isAdmin, ids]);
+  useEffect(() => {
+    if (isAdmin) getApprovedCount().then(setTotal);
+  }, [isAdmin]);
+  useEffect(() => {
+    refreshReaders();
+  }, [refreshReaders]);
+
+  async function openNews(n: NewsRow) {
+    setViewing(n);
+    if (myReadSet.has(n.id)) return;
+    const ok = await recordContentRead(READ_TYPE, n.id, profile?.name ?? null, profile?.team ?? null);
+    if (ok) {
+      setMyReadSet((prev) => new Set(prev).add(n.id));
+      if (isAdmin) refreshReaders();
+    }
+  }
 
   async function addNews() {
     if (!title.trim()) return;
@@ -171,7 +212,7 @@ export function CompanyNews() {
           <li key={n.id} className="group flex items-center gap-2 py-2.5 text-sm">
             <button
               type="button"
-              onClick={() => setViewing(n)}
+              onClick={() => openNews(n)}
               className="flex min-w-0 flex-1 items-center gap-2 text-left"
             >
               <span
@@ -196,6 +237,7 @@ export function CompanyNews() {
                 {n.created_at ? n.created_at.slice(5, 10) : ""}
               </span>
             </button>
+            {isAdmin && <ReadStat total={total} readers={readers[n.id] ?? []} />}
             {isAdmin && (
               <button
                 type="button"
