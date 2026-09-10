@@ -212,15 +212,13 @@ export function NoticeBoard() {
       title="공지사항"
       icon="notice"
       headerRight={
-        isAdmin && (
-          <button
-            type="button"
-            onClick={() => setAdding((v) => !v)}
-            className="rounded-md px-2 py-1 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-seum-600"
-          >
-            {adding ? "닫기" : "+ 글쓰기"}
-          </button>
-        )
+        <button
+          type="button"
+          onClick={() => setAdding((v) => !v)}
+          className="rounded-md px-2 py-1 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-seum-600"
+        >
+          {adding ? "닫기" : "+ 글쓰기"}
+        </button>
       }
     >
       {adding && (
