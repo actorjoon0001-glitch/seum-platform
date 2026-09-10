@@ -8,6 +8,10 @@ import { SYSTEMS } from "../config/systems";
 /** 업데이트 대상 선택 옵션 = 세움 플랫폼 + 런처 시스템들 */
 const SYSTEM_OPTIONS = ["세움 플랫폼", ...SYSTEMS.filter((s) => s.launcher).map((s) => s.label)];
 
+/** 최근 업데이트에서만 다르게 표기할 이름 (저장값은 원래 라벨 유지 → 색상 매핑 보존) */
+const DISPLAY_NAME: Record<string, string> = { "계약서OS": "전자계약서OS" };
+const displayName = (s: string) => DISPLAY_NAME[s] ?? s;
+
 interface UpdateRow {
   id: string;
   system: string;
@@ -128,7 +132,7 @@ export function RecentUpdates() {
             >
               <option value="">시스템 선택</option>
               {SYSTEM_OPTIONS.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>{displayName(s)}</option>
               ))}
             </select>
             <select
@@ -167,7 +171,7 @@ export function RecentUpdates() {
             <span
               className={`mt-0.5 shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold ${systemBadge(u.system)}`}
             >
-              {u.system}
+              {displayName(u.system)}
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm leading-relaxed text-neutral-700">{u.text}</p>
