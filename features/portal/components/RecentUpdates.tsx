@@ -1,9 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "./Card";
 import { useProfile } from "./PortalProvider";
+import { ReadStat } from "./ReadStat";
+import {
+  getApprovedCount,
+  getContentReaders,
+  getMyContentReads,
+  recordContentRead,
+  type Reader,
+} from "./reads";
 import { SYSTEMS } from "../config/systems";
+
+const READ_TYPE = "update";
 
 /** 업데이트 대상 선택 옵션 = 세움 플랫폼 + 런처 시스템들 */
 const SYSTEM_OPTIONS = ["세움 플랫폼", ...SYSTEMS.filter((s) => s.launcher).map((s) => s.label)];
@@ -48,6 +58,9 @@ export function RecentUpdates() {
 
   const [rows, setRows] = useState<UpdateRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [readers, setReaders] = useState<Record<string, Reader[]>>({});
+  const [myReadSet, setMyReadSet] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState(false);
   const [system, setSystem] = useState("");
   const [tag, setTag] = useState("신규");
@@ -75,6 +88,31 @@ export function RecentUpdates() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    getMyContentReads(READ_TYPE).then(setMyReadSet);
+  }, []);
+
+  const ids = useMemo(() => rows.map((r) => r.id), [rows]);
+  const refreshReaders = useCallback(async () => {
+    if (!isAdmin || ids.length === 0) return;
+    setReaders(await getContentReaders(READ_TYPE, ids));
+  }, [isAdmin, ids]);
+  useEffect(() => {
+    if (isAdmin) getApprovedCount().then(setTotal);
+  }, [isAdmin]);
+  useEffect(() => {
+    refreshReaders();
+  }, [refreshReaders]);
+
+  async function openUpdate(id: string) {
+    if (myReadSet.has(id)) return;
+    const ok = await recordContentRead(READ_TYPE, id, profile?.name ?? null, profile?.team ?? null);
+    if (ok) {
+      setMyReadSet((prev) => new Set(prev).add(id));
+      if (isAdmin) refreshReaders();
+    }
+  }
 
   async function addUpdate() {
     if (!system.trim() || !text.trim()) return;
@@ -168,25 +206,36 @@ export function RecentUpdates() {
       <ul className="space-y-2.5">
         {rows.map((u) => (
           <li key={u.id} className="group flex items-start gap-2.5">
-            <span
-              className={`mt-0.5 shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold ${systemBadge(u.system)}`}
+            <button
+              type="button"
+              onClick={() => openUpdate(u.id)}
+              className="flex min-w-0 flex-1 items-start gap-2.5 text-left"
             >
-              {displayName(u.system)}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm leading-relaxed text-neutral-700">{u.text}</p>
-              <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-neutral-400">
-                {u.tag && <span>{u.tag}</span>}
-                {u.tag && u.created_at && <span>·</span>}
-                <span className="tabular-nums">{u.created_at ? u.created_at.slice(0, 10) : ""}</span>
-              </p>
-            </div>
+              <span
+                className={`mt-0.5 shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold ${systemBadge(u.system)}`}
+              >
+                {displayName(u.system)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-relaxed text-neutral-700">{u.text}</p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-neutral-400">
+                  {u.tag && <span>{u.tag}</span>}
+                  {u.tag && u.created_at && <span>·</span>}
+                  <span className="tabular-nums">{u.created_at ? u.created_at.slice(0, 10) : ""}</span>
+                </p>
+              </div>
+            </button>
+            {isAdmin && (
+              <span className="mt-0.5 shrink-0">
+                <ReadStat total={total} readers={readers[u.id] ?? []} />
+              </span>
+            )}
             {isAdmin && (
               <button
                 type="button"
                 onClick={() => removeUpdate(u.id)}
                 aria-label="삭제"
-                className="shrink-0 text-neutral-300 opacity-0 transition hover:text-rose-500 group-hover:opacity-100"
+                className="mt-0.5 shrink-0 text-neutral-300 opacity-0 transition hover:text-rose-500 group-hover:opacity-100"
               >
                 ✕
               </button>

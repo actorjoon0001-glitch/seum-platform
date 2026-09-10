@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "./Card";
 import { Icon } from "./icons";
 import { useProfile } from "./PortalProvider";
+import { ReadStat } from "./ReadStat";
+import { getApprovedCount, getNoticeReaders, type Reader } from "./reads";
 
 interface Announcement {
   id: string;
@@ -45,6 +47,8 @@ export function NoticeBoard() {
   const [tab, setTab] = useState("전체");
   const [viewing, setViewing] = useState<Announcement | null>(null);
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
+  const [total, setTotal] = useState(0);
+  const [readers, setReaders] = useState<Record<string, Reader[]>>({});
 
   const [adding, setAdding] = useState(false);
   const [team, setTeam] = useState("전체");
@@ -121,6 +125,7 @@ export function NoticeBoard() {
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("seum:notice-read"));
         }
+        if (isAdmin) refreshReaders();
       }
     } catch {
       // 읽음 기록 실패는 무시 (열람은 정상 동작)
@@ -130,6 +135,19 @@ export function NoticeBoard() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // 관리자: 전체 인원 + 공지별 읽은 사람
+  const ids = useMemo(() => rows.map((r) => r.id), [rows]);
+  const refreshReaders = useCallback(async () => {
+    if (!isAdmin || ids.length === 0) return;
+    setReaders(await getNoticeReaders(ids));
+  }, [isAdmin, ids]);
+  useEffect(() => {
+    if (isAdmin) getApprovedCount().then(setTotal);
+  }, [isAdmin]);
+  useEffect(() => {
+    refreshReaders();
+  }, [refreshReaders]);
 
   async function addNotice() {
     if (!title.trim()) return;
@@ -346,6 +364,7 @@ export function NoticeBoard() {
             <span className="hidden shrink-0 text-xs text-neutral-400 sm:inline">
               {n.created_by_name}
             </span>
+            {isAdmin && <ReadStat total={total} readers={readers[n.id] ?? []} />}
             <span className="shrink-0 text-xs tabular-nums text-neutral-400">
               {n.created_at ? n.created_at.slice(5) : ""}
             </span>
