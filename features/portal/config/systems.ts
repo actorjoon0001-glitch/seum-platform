@@ -57,6 +57,7 @@ export const SYSTEMS: SystemCard[] = [
     serviceUrl: "https://seum-catalog.netlify.app/",
     ready: true,
     launcher: true,
+    teamLabel: "영업팀",
   },
   {
     key: "contract",
@@ -79,7 +80,7 @@ export const SYSTEMS: SystemCard[] = [
     tone: "blue",
     href: "/portal/app/home-planner",
     serviceUrl: "https://seum-home-planner.netlify.app/",
-    ready: true,
+    ready: false,
     launcher: true,
   },
   {
@@ -90,7 +91,7 @@ export const SYSTEMS: SystemCard[] = [
     tone: "rose",
     href: "/portal/app/customer",
     serviceUrl: "https://seum-crm-os.netlify.app/",
-    ready: true,
+    ready: false,
     launcher: true,
   },
   {
@@ -143,17 +144,6 @@ export const SYSTEMS: SystemCard[] = [
     teamLabel: "경영지원팀",
   },
   {
-    key: "exhibition",
-    label: "전시장 모델 취합",
-    desc: "전시장별 보유 모델 정보 입력·취합",
-    icon: "task",
-    tone: "violet",
-    href: "/portal/app/exhibition",
-    serviceUrl: "https://seum-ed.netlify.app/",
-    ready: true,
-    launcher: true,
-  },
-  {
     key: "worklog",
     label: "업무일지",
     desc: "일일 업무 기록 및 보고",
@@ -176,6 +166,18 @@ export const SYSTEMS: SystemCard[] = [
     launcher: true,
   },
   {
+    key: "exhibition",
+    label: "전시장 모델 취합",
+    desc: "전시장별 보유 모델 정보 입력·취합",
+    icon: "task",
+    tone: "violet",
+    href: "/portal/app/exhibition",
+    serviceUrl: "https://seum-ed.netlify.app/",
+    ready: true,
+    launcher: true,
+    teamLabel: "마케팅팀",
+  },
+  {
     key: "call",
     label: "Call OS",
     desc: "고객 문의·상담 기록·방문예약 관리",
@@ -186,6 +188,7 @@ export const SYSTEMS: SystemCard[] = [
     ready: true,
     launcher: true,
     roles: ["sales", "marketing"],
+    teamLabel: "마케팅팀",
   },
   // 보조 진입점(런처 카드 아님 · 상단 메뉴에서 진입)
   {
