@@ -20,6 +20,7 @@ export function PortalChrome() {
   const [roleOpen, setRoleOpen] = useState(false);
   const [systemsOpen, setSystemsOpen] = useState(false);
   const launchers = launcherSystems(role);
+  const isAdmin = ["admin", "master"].includes(me?.permission ?? "");
 
   async function handleLogout() {
     try {
@@ -136,6 +137,21 @@ export function PortalChrome() {
                 </li>
               );
             })}
+            {isAdmin && (
+              <li>
+                <Link
+                  href="/portal/admin"
+                  className={`flex items-center gap-1.5 px-3.5 py-3 text-sm font-semibold transition lg:px-4 ${
+                    pathname.startsWith("/portal/admin")
+                      ? "bg-seum-700 text-white"
+                      : "text-amber-200 hover:bg-seum-700/60 hover:text-white"
+                  }`}
+                >
+                  <Icon name="chart" size={16} />
+                  관리자
+                </Link>
+              </li>
+            )}
           </ul>
 
           {/* 시스템 바로 열기 드롭다운 (어느 페이지에서나 사용) */}
