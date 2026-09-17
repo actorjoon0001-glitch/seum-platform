@@ -19,7 +19,10 @@ const READ_TYPE = "update";
 const SYSTEM_OPTIONS = ["세움 플랫폼", ...SYSTEMS.filter((s) => s.launcher).map((s) => s.label)];
 
 /** 최근 업데이트에서만 다르게 표기할 이름 (저장값은 원래 라벨 유지 → 색상 매핑 보존) */
-const DISPLAY_NAME: Record<string, string> = { "계약서OS": "전자계약서OS" };
+const DISPLAY_NAME: Record<string, string> = {
+  "계약서OS": "전자계약서OS",
+  "정산OS": "경영지원OS", // 과거 저장된 '정산OS' 업데이트도 새 이름으로 표기
+};
 const displayName = (s: string) => DISPLAY_NAME[s] ?? s;
 
 interface UpdateRow {
@@ -37,6 +40,7 @@ const SYSTEM_TONE: Record<string, string> = { "세움 플랫폼": "green" };
 SYSTEMS.forEach((s) => {
   SYSTEM_TONE[s.label] = s.tone;
 });
+SYSTEM_TONE["정산OS"] = "rose"; // 라벨 변경 전 저장된 업데이트 색상 유지
 const TONE_BADGE: Record<string, string> = {
   green: "bg-seum-100 text-seum-700",
   blue: "bg-blue-100 text-blue-700",

@@ -122,7 +122,7 @@ export const SYSTEMS: SystemCard[] = [
   },
   {
     key: "finance",
-    label: "정산OS",
+    label: "경영지원OS",
     desc: "수납·잔금·인센티브 관리",
     icon: "finance",
     tone: "rose",
