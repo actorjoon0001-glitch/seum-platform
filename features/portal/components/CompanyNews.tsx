@@ -22,10 +22,12 @@ interface NewsRow {
   created_at: string | null;
   created_by_name: string | null;
   created_by_team: string | null;
+  image_url: string | null;
 }
 
 const BASE_COLS = "id, category, title, created_at";
-const FULL_COLS = "id, category, title, content, created_at, created_by_name, created_by_team";
+const FULL_COLS =
+  "id, category, title, content, created_at, created_by_name, created_by_team, image_url";
 
 const CATEGORIES = ["소식", "보도", "이야기"];
 const CATEGORY_STYLE: Record<string, string> = {
@@ -52,6 +54,7 @@ export function CompanyNews() {
   const [category, setCategory] = useState("소식");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -118,16 +121,30 @@ export function CompanyNews() {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
+
+      // 사진 업로드(선택)
+      let imageUrl: string | null = null;
+      if (file) {
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `news/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const up = await supabase.storage
+          .from("notices")
+          .upload(path, file, { upsert: false, cacheControl: "3600" });
+        if (up.error) throw up.error;
+        imageUrl = supabase.storage.from("notices").getPublicUrl(path).data.publicUrl;
+      }
+
       const full = {
         category,
         title: title.trim(),
         content: content.trim() || null,
         created_by_name: profile?.name ?? null,
         created_by_team: profile?.team ?? null,
+        image_url: imageUrl,
       };
       let res = await supabase.from("company_news").insert(full as never);
       if (res.error) {
-        // content/작성자 컬럼이 아직 없으면 최소 필드로 재시도
+        // content/작성자/이미지 컬럼이 아직 없으면 최소 필드로 재시도
         res = await supabase
           .from("company_news")
           .insert({ category, title: title.trim() } as never);
@@ -136,6 +153,7 @@ export function CompanyNews() {
       setTitle("");
       setContent("");
       setCategory("소식");
+      setFile(null);
       setAdding(false);
       await load();
     } catch (e) {
@@ -193,7 +211,16 @@ export function CompanyNews() {
             rows={3}
             className="w-full resize-y rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 outline-none focus:border-seum-500"
           />
-          <div className="flex justify-end">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="flex cursor-pointer items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-700 transition hover:border-seum-400 hover:text-seum-600">
+              📷 {file ? "사진 변경" : "사진 첨부"}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="hidden"
+              />
+            </label>
             <button
               type="button"
               onClick={addNews}
@@ -203,6 +230,19 @@ export function CompanyNews() {
               {saving ? "저장…" : "등록"}
             </button>
           </div>
+          {file && (
+            <p className="flex items-center gap-1.5 truncate text-xs text-neutral-500">
+              📷 {file.name}
+              <button
+                type="button"
+                onClick={() => setFile(null)}
+                className="text-neutral-400 hover:text-rose-500"
+                aria-label="사진 제거"
+              >
+                ✕
+              </button>
+            </p>
+          )}
           {error && <p className="text-xs text-rose-600">{error}</p>}
         </div>
       )}
@@ -223,6 +263,7 @@ export function CompanyNews() {
               <span className="min-w-0 flex-1 truncate text-neutral-700 transition group-hover:text-seum-600">
                 {n.title}
               </span>
+              {n.image_url && <span className="shrink-0 text-[11px] text-neutral-400">📷</span>}
               {n.created_by_team && (
                 <span className="hidden shrink-0 rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-500 sm:inline">
                   {n.created_by_team}
@@ -318,7 +359,18 @@ function NewsViewer({
             {news.content}
           </p>
         ) : (
-          <p className="text-sm text-neutral-400">추가 내용이 없습니다.</p>
+          !news.image_url && <p className="text-sm text-neutral-400">추가 내용이 없습니다.</p>
+        )}
+
+        {news.image_url && (
+          <a href={news.image_url} target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={news.image_url}
+              alt="세움 소식 사진"
+              className="mt-4 w-full rounded-lg border border-neutral-200"
+            />
+          </a>
         )}
 
         {canDelete && (
