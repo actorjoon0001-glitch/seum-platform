@@ -337,7 +337,7 @@ function PresencePanel() {
 
 interface AttendanceRow {
   id: string;
-  name: string | null;
+  user_name: string | null;
   team: string | null;
   check_in: string | null;
   check_out: string | null;
@@ -374,8 +374,8 @@ function AttendancePanel() {
       const supabase = createClient();
       const res = await supabase
         .from("attendance")
-        .select("id, name, team, check_in, check_out")
-        .eq("work_date", date)
+        .select("id, user_name, team, check_in, check_out")
+        .eq("date", date)
         .order("check_in", { ascending: true });
       setRows(res.error ? [] : ((res.data ?? []) as AttendanceRow[]));
     } catch {
@@ -433,7 +433,7 @@ function AttendancePanel() {
             ) : (
               rows.map((r) => (
                 <tr key={r.id} className="hover:bg-seum-50/40">
-                  <td className="px-4 py-2.5 font-semibold text-neutral-900">{r.name ?? "-"}</td>
+                  <td className="px-4 py-2.5 font-semibold text-neutral-900">{r.user_name ?? "-"}</td>
                   <td className="px-4 py-2.5 text-neutral-600">{r.team ?? "-"}</td>
                   <td className="px-4 py-2.5 tabular-nums text-seum-600">{hhmm(r.check_in)}</td>
                   <td className="px-4 py-2.5 tabular-nums text-rose-500">{hhmm(r.check_out)}</td>

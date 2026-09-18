@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useProfile } from "./PortalProvider";
 
 interface Attendance {
+  id: string;
   check_in: string | null;
   check_out: string | null;
 }
@@ -18,14 +19,12 @@ const hhmm = (ts: string | null) =>
   ts
     ? new Date(ts).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })
     : "";
-
-/** Supabase/일반 오류에서 메시지 추출 */
 function errMsg(e: unknown): string {
   if (e && typeof e === "object" && "message" in e) return String((e as { message: unknown }).message);
   return "알 수 없는 오류";
 }
 
-/** 오늘 근태 — 출근/퇴근 기록 (attendance 테이블) */
+/** 오늘 근태 — 출근/퇴근 기록 (세움OS 공유 attendance 테이블: date/user_name 스키마) */
 export function AttendanceWidget() {
   const { profile } = useProfile();
   const [row, setRow] = useState<Attendance | null>(null);
@@ -42,9 +41,9 @@ export function AttendanceWidget() {
       if (!user) return;
       const res = await supabase
         .from("attendance")
-        .select("check_in, check_out")
+        .select("id, check_in, check_out")
         .eq("user_id", user.id)
-        .eq("work_date", todayStr())
+        .eq("date", todayStr())
         .maybeSingle();
       setRow(res.error ? null : ((res.data ?? null) as Attendance | null));
     } catch {
@@ -67,16 +66,29 @@ export function AttendanceWidget() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
-      const res = await supabase.from("attendance").upsert(
-        {
+      const now = new Date().toISOString();
+      const existing = await supabase
+        .from("attendance")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("date", todayStr())
+        .maybeSingle();
+      let res;
+      if (existing.data && (existing.data as { id: string }).id) {
+        res = await supabase
+          .from("attendance")
+          .update({ check_in: now } as never)
+          .eq("id", (existing.data as { id: string }).id);
+      } else {
+        res = await supabase.from("attendance").insert({
           user_id: user.id,
-          work_date: todayStr(),
-          check_in: new Date().toISOString(),
-          name: profile?.name ?? null,
+          date: todayStr(),
+          check_in: now,
+          user_name: profile?.name ?? null,
           team: profile?.team ?? null,
-        } as never,
-        { onConflict: "user_id,work_date" },
-      );
+          showroom: profile?.showroom ?? null,
+        } as never);
+      }
       if (res.error) throw res.error;
       await load();
     } catch (e) {
@@ -99,7 +111,7 @@ export function AttendanceWidget() {
         .from("attendance")
         .update({ check_out: new Date().toISOString() } as never)
         .eq("user_id", user.id)
-        .eq("work_date", todayStr());
+        .eq("date", todayStr());
       if (res.error) throw res.error;
       await load();
     } catch (e) {
