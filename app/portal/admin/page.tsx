@@ -30,7 +30,7 @@ export default function AdminPage() {
   const { profile, loading: profileLoading } = useProfile();
   const isAdmin = ["admin", "master"].includes(profile?.permission ?? "");
 
-  const [tab, setTab] = useState<"approve" | "manage">("approve");
+  const [tab, setTab] = useState<"approve" | "manage" | "presence">("approve");
   const [rows, setRows] = useState<Emp[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -97,6 +97,9 @@ export default function AdminPage() {
         <TabBtn active={tab === "manage"} onClick={() => setTab("manage")}>
           직원 관리
         </TabBtn>
+        <TabBtn active={tab === "presence"} onClick={() => setTab("presence")}>
+          접속 현황
+        </TabBtn>
       </div>
 
       {loading ? (
@@ -143,8 +146,10 @@ export default function AdminPage() {
             </ul>
           )}
         </section>
-      ) : (
+      ) : tab === "manage" ? (
         <EmployeeManager rows={rows} reload={load} />
+      ) : (
+        <PresencePanel />
       )}
     </div>
   );
@@ -171,5 +176,102 @@ function TabBtn({
     >
       {children}
     </button>
+  );
+}
+
+interface Presence {
+  user_id: string;
+  name: string | null;
+  team: string | null;
+  last_seen: string | null;
+}
+
+const ONLINE_MS = 3 * 60 * 1000; // 3분 이내 = 접속 중
+
+function PresencePanel() {
+  const [rows, setRows] = useState<Presence[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(() => Date.now());
+
+  const load = useCallback(async () => {
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const res = await supabase
+        .from("user_presence")
+        .select("user_id, name, team, last_seen")
+        .order("last_seen", { ascending: false });
+      setRows(res.error ? [] : ((res.data ?? []) as Presence[]));
+    } catch {
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+    const t = setInterval(() => {
+      setNow(Date.now());
+      load();
+    }, 30_000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  const online = rows.filter((r) => r.last_seen && now - Date.parse(r.last_seen) < ONLINE_MS);
+
+  function fmt(ts: string | null) {
+    if (!ts) return "-";
+    const diff = now - Date.parse(ts);
+    if (diff < ONLINE_MS) return "접속 중";
+    const min = Math.floor(diff / 60000);
+    if (min < 60) return `${min}분 전`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}시간 전`;
+    return ts.slice(0, 16).replace("T", " ");
+  }
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-3">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-seum-50 px-3 py-1 text-sm font-semibold text-seum-700">
+          <span className="h-2 w-2 rounded-full bg-seum-500" />
+          접속 중 {online.length}명
+        </span>
+        <span className="text-xs text-neutral-400">최근 3분 이내 활동 기준 · 30초마다 갱신</span>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
+        {loading ? (
+          <p className="py-12 text-center text-sm text-neutral-400">불러오는 중…</p>
+        ) : rows.length === 0 ? (
+          <p className="py-12 text-center text-sm text-neutral-400">접속 기록이 없습니다.</p>
+        ) : (
+          <ul className="divide-y divide-neutral-100">
+            {rows.map((r) => {
+              const isOnline = r.last_seen && now - Date.parse(r.last_seen) < ONLINE_MS;
+              return (
+                <li key={r.user_id} className="flex items-center gap-3 px-4 py-2.5">
+                  <span
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                      isOnline ? "bg-seum-500" : "bg-neutral-300"
+                    }`}
+                  />
+                  <span className="text-sm font-semibold text-neutral-900">{r.name ?? "-"}</span>
+                  {r.team && <span className="text-xs text-neutral-400">{r.team}</span>}
+                  <span
+                    className={`ml-auto text-xs tabular-nums ${
+                      isOnline ? "font-semibold text-seum-600" : "text-neutral-400"
+                    }`}
+                  >
+                    {fmt(r.last_seen)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }
