@@ -5,6 +5,7 @@ import { Card } from "./Card";
 import { Icon } from "./icons";
 import { useProfile } from "./PortalProvider";
 import { ProfileEditModal } from "./ProfileEditModal";
+import { AttendanceWidget } from "./AttendanceWidget";
 
 /** 내 정보 — 로그인 직원 프로필(세움OS) + 미확인 공지 + 최근 로그인 */
 export function MyInfoCard() {
@@ -98,6 +99,7 @@ export function MyInfoCard() {
       </div>
 
       <dl className="space-y-2 border-t border-neutral-100 pt-3 text-sm">
+        <AttendanceWidget />
         <div className="flex items-center justify-between">
           <dt className="flex items-center gap-2 text-neutral-500">
             <Icon name="clock" size={15} className="text-neutral-400" />
