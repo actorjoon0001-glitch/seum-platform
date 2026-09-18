@@ -72,8 +72,9 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* 로고 */}
         <div className="mb-7 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-seum-500 text-xl font-extrabold text-white shadow-sm">
-            세
+          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-neutral-200">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icon-192.png" alt="세움디자인하우징" className="h-full w-full object-contain" />
           </div>
           <h1 className="text-xl font-extrabold tracking-tight text-neutral-900">
             세움<span className="text-seum-600"> 플랫폼</span>
