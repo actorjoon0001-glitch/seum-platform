@@ -14,6 +14,7 @@ import type { Role } from "../config/roles";
 import { SYSTEMS, type SystemCard } from "../config/systems";
 import { PortalChrome } from "./PortalChrome";
 import { SystemTabsOverlay } from "./SystemTabsOverlay";
+import { PresenceHeartbeat } from "./PresenceHeartbeat";
 
 /* ── 역할(권한) 컨텍스트 ── */
 interface RoleCtx {
@@ -258,6 +259,7 @@ export function PortalProvider({ children }: { children: ReactNode }) {
             <main className="mx-auto max-w-[1600px] px-4 pb-12 pt-5 lg:px-6">{children}</main>
           </div>
           <SystemTabsOverlay />
+          <PresenceHeartbeat />
         </ProfileContext.Provider>
       </SystemsContext.Provider>
     </RoleContext.Provider>
