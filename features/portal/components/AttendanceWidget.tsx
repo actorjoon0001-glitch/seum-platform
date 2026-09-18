@@ -19,6 +19,12 @@ const hhmm = (ts: string | null) =>
     ? new Date(ts).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })
     : "";
 
+/** Supabase/일반 오류에서 메시지 추출 */
+function errMsg(e: unknown): string {
+  if (e && typeof e === "object" && "message" in e) return String((e as { message: unknown }).message);
+  return "알 수 없는 오류";
+}
+
 /** 오늘 근태 — 출근/퇴근 기록 (attendance 테이블) */
 export function AttendanceWidget() {
   const { profile } = useProfile();
@@ -74,7 +80,7 @@ export function AttendanceWidget() {
       if (res.error) throw res.error;
       await load();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "출근 처리 실패");
+      alert("출근 처리 실패: " + errMsg(e));
     } finally {
       setBusy(false);
     }
@@ -97,7 +103,7 @@ export function AttendanceWidget() {
       if (res.error) throw res.error;
       await load();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "퇴근 처리 실패");
+      alert("퇴근 처리 실패: " + errMsg(e));
     } finally {
       setBusy(false);
     }
