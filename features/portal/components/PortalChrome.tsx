@@ -56,10 +56,12 @@ export function PortalChrome() {
         <div className="mx-auto flex max-w-[1600px] items-center gap-4 px-4 py-2.5 lg:px-6">
           {/* 로고 + 부제 */}
           <Link href="/portal" className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-neutral-200">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon-192.png" alt="세움디자인하우징" className="h-full w-full object-contain" />
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-mark.png"
+              alt="세움디자인하우징"
+              className="h-10 w-auto object-contain"
+            />
             <span className="leading-tight">
               <span className="block text-[17px] font-extrabold tracking-tight text-neutral-900">
                 세움<span className="text-seum-600"> 플랫폼</span>
