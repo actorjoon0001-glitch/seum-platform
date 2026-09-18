@@ -30,7 +30,7 @@ export default function AdminPage() {
   const { profile, loading: profileLoading } = useProfile();
   const isAdmin = ["admin", "master"].includes(profile?.permission ?? "");
 
-  const [tab, setTab] = useState<"approve" | "manage" | "presence">("approve");
+  const [tab, setTab] = useState<"approve" | "manage" | "presence" | "attendance">("approve");
   const [rows, setRows] = useState<Emp[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -100,6 +100,9 @@ export default function AdminPage() {
         <TabBtn active={tab === "presence"} onClick={() => setTab("presence")}>
           접속 현황
         </TabBtn>
+        <TabBtn active={tab === "attendance"} onClick={() => setTab("attendance")}>
+          근태 현황
+        </TabBtn>
       </div>
 
       {loading ? (
@@ -148,8 +151,10 @@ export default function AdminPage() {
         </section>
       ) : tab === "manage" ? (
         <EmployeeManager rows={rows} reload={load} />
-      ) : (
+      ) : tab === "presence" ? (
         <PresencePanel />
+      ) : (
+        <AttendancePanel />
       )}
     </div>
   );
@@ -325,6 +330,121 @@ function PresencePanel() {
             </ul>
           )}
         </div>
+      </div>
+    </section>
+  );
+}
+
+interface AttendanceRow {
+  id: string;
+  name: string | null;
+  team: string | null;
+  check_in: string | null;
+  check_out: string | null;
+}
+
+function todayLocal() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+}
+const hhmm = (ts: string | null) =>
+  ts
+    ? new Date(ts).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })
+    : "-";
+function worked(inTs: string | null, outTs: string | null) {
+  if (!inTs || !outTs) return "-";
+  const ms = Date.parse(outTs) - Date.parse(inTs);
+  if (ms <= 0) return "-";
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return `${h}시간 ${m}분`;
+}
+
+function AttendancePanel() {
+  const [date, setDate] = useState(todayLocal());
+  const [rows, setRows] = useState<AttendanceRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const res = await supabase
+        .from("attendance")
+        .select("id, name, team, check_in, check_out")
+        .eq("work_date", date)
+        .order("check_in", { ascending: true });
+      setRows(res.error ? [] : ((res.data ?? []) as AttendanceRow[]));
+    } catch {
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [date]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const done = rows.filter((r) => r.check_out).length;
+
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900 outline-none focus:border-seum-500"
+        />
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-seum-50 px-3 py-1 text-sm font-semibold text-seum-700">
+          출근 {rows.length}명
+        </span>
+        <span className="text-xs text-neutral-400">· 퇴근 완료 {done}명</span>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white shadow-sm">
+        <table className="w-full min-w-[560px] text-left text-sm">
+          <thead className="border-b border-neutral-100 bg-neutral-50/60 text-xs text-neutral-500">
+            <tr>
+              <th className="px-4 py-2.5 font-medium">이름</th>
+              <th className="px-4 py-2.5 font-medium">팀</th>
+              <th className="px-4 py-2.5 font-medium">출근</th>
+              <th className="px-4 py-2.5 font-medium">퇴근</th>
+              <th className="px-4 py-2.5 font-medium">근무시간</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-neutral-50">
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-12 text-center text-sm text-neutral-400">
+                  불러오는 중…
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-12 text-center text-sm text-neutral-400">
+                  해당 날짜 근태 기록이 없습니다.
+                </td>
+              </tr>
+            ) : (
+              rows.map((r) => (
+                <tr key={r.id} className="hover:bg-seum-50/40">
+                  <td className="px-4 py-2.5 font-semibold text-neutral-900">{r.name ?? "-"}</td>
+                  <td className="px-4 py-2.5 text-neutral-600">{r.team ?? "-"}</td>
+                  <td className="px-4 py-2.5 tabular-nums text-seum-600">{hhmm(r.check_in)}</td>
+                  <td className="px-4 py-2.5 tabular-nums text-rose-500">{hhmm(r.check_out)}</td>
+                  <td className="px-4 py-2.5 tabular-nums text-neutral-600">
+                    {worked(r.check_in, r.check_out)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </section>
   );
