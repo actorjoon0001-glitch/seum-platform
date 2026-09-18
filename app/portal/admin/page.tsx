@@ -87,8 +87,9 @@ export default function AdminPage() {
     if (isAdmin) load();
   }, [isAdmin, load]);
 
+  // 승인 대기 = 아직 승인/반려 처리 안 된 직원(pending 등)
   const pending = useMemo(
-    () => rows.filter((r) => (r.status ?? "") !== "approved"),
+    () => rows.filter((r) => (r.status ?? "") !== "approved" && (r.status ?? "") !== "rejected"),
     [rows],
   );
   const managed = useMemo(() => {
