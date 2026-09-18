@@ -188,8 +188,16 @@ interface Presence {
 
 const ONLINE_MS = 3 * 60 * 1000; // 3분 이내 = 접속 중
 
+interface LoginEvent {
+  id: string;
+  name: string | null;
+  team: string | null;
+  created_at: string | null;
+}
+
 function PresencePanel() {
   const [rows, setRows] = useState<Presence[]>([]);
+  const [events, setEvents] = useState<LoginEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
 
@@ -197,13 +205,25 @@ function PresencePanel() {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const res = await supabase
-        .from("portal_presence")
-        .select("user_id, name, team, last_seen")
-        .order("last_seen", { ascending: false });
-      setRows(res.error ? [] : ((res.data ?? []) as Presence[]));
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const [pres, ev] = await Promise.all([
+        supabase
+          .from("portal_presence")
+          .select("user_id, name, team, last_seen")
+          .order("last_seen", { ascending: false }),
+        supabase
+          .from("login_events")
+          .select("id, name, team, created_at")
+          .gte("created_at", start.toISOString())
+          .order("created_at", { ascending: false })
+          .limit(200),
+      ]);
+      setRows(pres.error ? [] : ((pres.data ?? []) as Presence[]));
+      setEvents(ev.error ? [] : ((ev.data ?? []) as LoginEvent[]));
     } catch {
       setRows([]);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -271,6 +291,40 @@ function PresencePanel() {
             })}
           </ul>
         )}
+      </div>
+
+      {/* 오늘 접속 기록 */}
+      <div className="pt-2">
+        <div className="mb-2 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-neutral-800">오늘 접속 기록</h3>
+          <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] text-neutral-500">
+            {events.length}건
+          </span>
+          <span className="text-xs text-neutral-400">오늘 0시 이후 · 방문 단위(30분)</span>
+        </div>
+        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
+          {events.length === 0 ? (
+            <p className="py-10 text-center text-sm text-neutral-400">오늘 접속 기록이 없습니다.</p>
+          ) : (
+            <ul className="divide-y divide-neutral-100">
+              {events.map((e) => (
+                <li key={e.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <span className="text-sm font-semibold text-neutral-900">{e.name ?? "-"}</span>
+                  {e.team && <span className="text-xs text-neutral-400">{e.team}</span>}
+                  <span className="ml-auto text-xs tabular-nums text-neutral-500">
+                    {e.created_at
+                      ? new Date(e.created_at).toLocaleTimeString("ko-KR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                        })
+                      : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </section>
   );
