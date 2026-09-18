@@ -198,7 +198,7 @@ function PresencePanel() {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
       const res = await supabase
-        .from("user_presence")
+        .from("portal_presence")
         .select("user_id, name, team, last_seen")
         .order("last_seen", { ascending: false });
       setRows(res.error ? [] : ((res.data ?? []) as Presence[]));

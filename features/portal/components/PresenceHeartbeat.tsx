@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useProfile } from "./PortalProvider";
 
-/** 접속 신호(heartbeat) — 포털이 열려 있는 동안 user_presence.last_seen 갱신 */
+/** 접속 신호(heartbeat) — 포털이 열려 있는 동안 portal_presence.last_seen 갱신 */
 export function PresenceHeartbeat() {
   const { profile } = useProfile();
 
@@ -19,7 +19,7 @@ export function PresenceHeartbeat() {
           data: { user },
         } = await supabase.auth.getUser();
         if (!user || stopped) return;
-        await supabase.from("user_presence").upsert(
+        await supabase.from("portal_presence").upsert(
           {
             user_id: user.id,
             name: profile?.name ?? null,
