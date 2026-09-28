@@ -78,9 +78,19 @@ export function PresenceHeartbeat() {
           name = (emp.data as { name?: string } | null)?.name ?? null;
           team = (emp.data as { team?: string } | null)?.team ?? null;
         }
+        // 기기(UA) + 접속 IP 수집
+        const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : null;
+        let ip: string | null = null;
+        try {
+          const r = await fetch("https://api.ipify.org?format=json");
+          if (r.ok) ip = (await r.json())?.ip ?? null;
+        } catch {
+          /* IP 조회 실패 무시 */
+        }
+        if (cancelled) return;
         await supabase
           .from("login_events")
-          .insert({ user_id: user.id, name, team } as never);
+          .insert({ user_id: user.id, name, team, ip, user_agent: userAgent } as never);
       } catch {
         /* 무시 */
       }

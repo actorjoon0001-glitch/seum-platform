@@ -198,6 +198,24 @@ interface LoginEvent {
   name: string | null;
   team: string | null;
   created_at: string | null;
+  ip: string | null;
+  user_agent: string | null;
+}
+
+/** UA → 기기 라벨 (PC/모바일/태블릿 · OS) */
+function deviceLabel(ua: string | null): { icon: string; label: string } {
+  if (!ua) return { icon: "🖥️", label: "알 수 없음" };
+  const isTablet = /iPad|Tablet/i.test(ua);
+  const isMobile = !isTablet && /Mobi|Android.*Mobile|iPhone|iPod/i.test(ua);
+  let os = "";
+  if (/Windows/i.test(ua)) os = "Windows";
+  else if (/Macintosh|Mac OS X/i.test(ua)) os = "Mac";
+  else if (/Android/i.test(ua)) os = "Android";
+  else if (/iPhone|iPad|iPod|iOS/i.test(ua)) os = "iOS";
+  else if (/Linux/i.test(ua)) os = "Linux";
+  const kind = isTablet ? "태블릿" : isMobile ? "모바일" : "PC";
+  const icon = isTablet ? "📲" : isMobile ? "📱" : "💻";
+  return { icon, label: os ? `${kind} · ${os}` : kind };
 }
 
 function PresencePanel() {
@@ -210,8 +228,6 @@ function PresencePanel() {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const start = new Date();
-      start.setHours(0, 0, 0, 0);
       const [pres, ev] = await Promise.all([
         supabase
           .from("portal_presence")
@@ -219,8 +235,7 @@ function PresencePanel() {
           .order("last_seen", { ascending: false }),
         supabase
           .from("login_events")
-          .select("id, name, team, created_at")
-          .gte("created_at", start.toISOString())
+          .select("id, name, team, created_at, ip, user_agent")
           .order("created_at", { ascending: false })
           .limit(200),
       ]);
@@ -298,36 +313,59 @@ function PresencePanel() {
         )}
       </div>
 
-      {/* 오늘 접속 기록 */}
+      {/* 로그인 기록 */}
       <div className="pt-2">
         <div className="mb-2 flex items-center gap-2">
-          <h3 className="text-sm font-bold text-neutral-800">오늘 접속 기록</h3>
+          <h3 className="text-sm font-bold text-neutral-800">로그인 기록</h3>
           <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] text-neutral-500">
             {events.length}건
           </span>
-          <span className="text-xs text-neutral-400">오늘 0시 이후 · 방문 단위(30분)</span>
+          <span className="text-xs text-neutral-400">최근 200건 · 방문 단위(30분)</span>
         </div>
-        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white shadow-sm">
           {events.length === 0 ? (
-            <p className="py-10 text-center text-sm text-neutral-400">오늘 접속 기록이 없습니다.</p>
+            <p className="py-10 text-center text-sm text-neutral-400">로그인 기록이 없습니다.</p>
           ) : (
-            <ul className="divide-y divide-neutral-100">
-              {events.map((e) => (
-                <li key={e.id} className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="text-sm font-semibold text-neutral-900">{e.name ?? "-"}</span>
-                  {e.team && <span className="text-xs text-neutral-400">{e.team}</span>}
-                  <span className="ml-auto text-xs tabular-nums text-neutral-500">
-                    {e.created_at
-                      ? new Date(e.created_at).toLocaleTimeString("ko-KR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        })
-                      : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="border-b border-neutral-100 bg-neutral-50/60 text-xs text-neutral-500">
+                <tr>
+                  <th className="px-4 py-2.5 font-medium">시각(KST)</th>
+                  <th className="px-4 py-2.5 font-medium">이름</th>
+                  <th className="px-4 py-2.5 font-medium">기기</th>
+                  <th className="px-4 py-2.5 font-medium">접속 IP</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-50">
+                {events.map((e) => {
+                  const dev = deviceLabel(e.user_agent);
+                  return (
+                    <tr key={e.id} className="hover:bg-seum-50/40">
+                      <td className="whitespace-nowrap px-4 py-2.5 tabular-nums text-neutral-600">
+                        {e.created_at
+                          ? new Date(e.created_at).toLocaleString("ko-KR", {
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: false,
+                            })
+                          : "-"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 font-semibold text-neutral-900">
+                        {e.name ?? "-"}
+                        {e.team && <span className="ml-1 text-xs font-normal text-neutral-400">{e.team}</span>}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-neutral-600">
+                        {dev.icon} {dev.label}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 tabular-nums text-neutral-500">
+                        {e.ip ?? "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </div>
       </div>
