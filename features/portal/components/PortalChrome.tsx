@@ -6,18 +6,15 @@ import { useState } from "react";
 import { Icon } from "./icons";
 import { useProfile, useRole, useSystems } from "./PortalProvider";
 import { NAV_MENU, UTIL_LINKS } from "../config/nav";
-import { ROLES, roleLabel } from "../config/roles";
-import type { Role } from "../config/roles";
 import { launcherSystems } from "../config/systems";
 
 /** 상단 고정 헤더(흰색 · 로고/프로필) + 그린 네비게이션 바 */
 export function PortalChrome() {
-  const { role, setRole } = useRole();
+  const { role } = useRole();
   const { openService } = useSystems();
   const { profile: me } = useProfile();
   const pathname = usePathname();
   const router = useRouter();
-  const [roleOpen, setRoleOpen] = useState(false);
   const [systemsOpen, setSystemsOpen] = useState(false);
   const launchers = launcherSystems(role);
   const isAdmin = ["admin", "master"].includes(me?.permission ?? "");
@@ -102,7 +99,7 @@ export function PortalChrome() {
                   )}
                 </p>
                 <p className="text-[11px] text-neutral-400">
-                  {[me?.team, me?.permission].filter(Boolean).join(" · ") || me?.email}
+                  {me?.team || me?.email}
                 </p>
               </div>
               <button
@@ -231,37 +228,6 @@ export function PortalChrome() {
                   })}
                 </div>
               </>
-            )}
-          </div>
-
-          {/* 역할 미리보기 스위처 (인증 전 임시) */}
-          <div className="relative ml-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setRoleOpen((v) => !v)}
-              className="flex items-center gap-1.5 rounded-md bg-seum-700/70 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-seum-700"
-            >
-              권한: {roleLabel(role)}
-              <Icon name="chevron" size={14} />
-            </button>
-            {roleOpen && (
-              <div className="absolute right-0 top-full z-50 mt-1 w-32 overflow-hidden rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
-                {ROLES.map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => {
-                      setRole(r.id as Role);
-                      setRoleOpen(false);
-                    }}
-                    className={`block w-full px-3 py-1.5 text-left text-sm transition hover:bg-seum-50 ${
-                      role === r.id ? "font-semibold text-seum-600" : "text-neutral-600"
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
             )}
           </div>
         </div>
