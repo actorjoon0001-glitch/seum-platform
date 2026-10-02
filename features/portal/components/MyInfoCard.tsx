@@ -15,7 +15,7 @@ export function MyInfoCard() {
   const [lastLogin, setLastLogin] = useState<string | null>(null);
 
   const name = me?.name ?? "불러오는 중…";
-  const sub = [me?.team, me?.permission].filter(Boolean).join(" · ") || me?.email || "";
+  const sub = me?.team || me?.email || "";
 
   // 미확인 공지(전체 공지 - 내가 읽은 공지) + 최근 로그인 시각(세션)
   useEffect(() => {
