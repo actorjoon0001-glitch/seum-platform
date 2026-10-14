@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@/features/portal/components/icons";
 import { useProfile } from "@/features/portal/components/PortalProvider";
 import { EmployeeManager, type Emp } from "@/features/portal/components/EmployeeManager";
+import { ATTENDANCE_ENABLED } from "@/features/portal/config/flags";
 
 const TEAM_LABELS: Record<string, string> = {
   경영: "경영", 마케팅: "마케팅", 영업: "영업", 설계: "설계", 시공: "시공", 정산: "정산",
@@ -100,9 +101,11 @@ export default function AdminPage() {
         <TabBtn active={tab === "presence"} onClick={() => setTab("presence")}>
           접속 현황
         </TabBtn>
-        <TabBtn active={tab === "attendance"} onClick={() => setTab("attendance")}>
-          근태 현황
-        </TabBtn>
+        {ATTENDANCE_ENABLED && (
+          <TabBtn active={tab === "attendance"} onClick={() => setTab("attendance")}>
+            근태 현황
+          </TabBtn>
+        )}
       </div>
 
       {loading ? (
