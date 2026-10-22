@@ -140,6 +140,21 @@ export function PortalChrome() {
             {isAdmin && (
               <li>
                 <Link
+                  href="/portal/exec"
+                  className={`flex items-center gap-1.5 px-3.5 py-3 text-sm font-semibold transition lg:px-4 ${
+                    pathname.startsWith("/portal/exec")
+                      ? "bg-seum-700 text-white"
+                      : "text-amber-200 hover:bg-seum-700/60 hover:text-white"
+                  }`}
+                >
+                  <Icon name="chart" size={16} />
+                  대표이사 대시보드
+                </Link>
+              </li>
+            )}
+            {isAdmin && (
+              <li>
+                <Link
                   href="/portal/admin"
                   className={`flex items-center gap-1.5 px-3.5 py-3 text-sm font-semibold transition lg:px-4 ${
                     pathname.startsWith("/portal/admin")
