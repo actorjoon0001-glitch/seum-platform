@@ -19,7 +19,6 @@ export const NAV_MENU: NavItem[] = [
   { label: "연락망", href: "/portal/org", icon: "org" },
   { label: "일정관리", href: "/portal#schedule", icon: "calendar" },
   { label: "자료실", href: "/portal/app/archive", icon: "archive" },
-  { label: "업데이트 내역", href: "/portal#updates", icon: "update" },
 ];
 
 /**
