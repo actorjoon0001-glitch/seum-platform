@@ -5,6 +5,7 @@ import { Icon } from "@/features/portal/components/icons";
 import { useProfile } from "@/features/portal/components/PortalProvider";
 import { EmployeeManager, type Emp } from "@/features/portal/components/EmployeeManager";
 import { ATTENDANCE_ENABLED } from "@/features/portal/config/flags";
+import { isOwnerEmail } from "@/features/portal/config/flags";
 
 const TEAM_LABELS: Record<string, string> = {
   경영: "경영", 마케팅: "마케팅", 영업: "영업", 설계: "설계", 시공: "시공", 정산: "정산",
@@ -29,7 +30,7 @@ function fmtPhone(p: string | null): string {
 
 export default function AdminPage() {
   const { profile, loading: profileLoading } = useProfile();
-  const isAdmin = ["admin", "master"].includes(profile?.permission ?? "");
+  const isAdmin = isOwnerEmail(profile?.email);
 
   const [tab, setTab] = useState<"approve" | "manage" | "presence" | "attendance">("approve");
   const [rows, setRows] = useState<Emp[]>([]);
