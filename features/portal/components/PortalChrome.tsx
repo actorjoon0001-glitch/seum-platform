@@ -7,6 +7,7 @@ import { Icon } from "./icons";
 import { useProfile, useRole, useSystems } from "./PortalProvider";
 import { NAV_MENU, UTIL_LINKS } from "../config/nav";
 import { launcherSystems } from "../config/systems";
+import { isOwnerEmail } from "../config/flags";
 
 /** 상단 고정 헤더(흰색 · 로고/프로필) + 그린 네비게이션 바 */
 export function PortalChrome() {
@@ -18,6 +19,7 @@ export function PortalChrome() {
   const [systemsOpen, setSystemsOpen] = useState(false);
   const launchers = launcherSystems(role);
   const isAdmin = ["admin", "master"].includes(me?.permission ?? "");
+  const isOwner = isOwnerEmail(me?.email);
 
   async function handleLogout() {
     try {
@@ -152,7 +154,7 @@ export function PortalChrome() {
                 </Link>
               </li>
             )}
-            {isAdmin && (
+            {isOwner && (
               <li>
                 <Link
                   href="/portal/admin"
