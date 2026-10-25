@@ -101,7 +101,14 @@ export default function ExecDashboardPage() {
     }
     const monthCount: Record<string, number> = Object.fromEntries(months.map((m) => [m, 0]));
     const statusCount: Record<string, number> = {};
-    const showroom: Record<string, { count: number; amount: number }> = {};
+    type ShowroomAgg = {
+      count: number;
+      amount: number;
+      monthCount: number;
+      monthAmount: number;
+      status: Record<string, number>;
+    };
+    const showroom: Record<string, ShowroomAgg> = {};
 
     let total = 0, totalAmt = 0, monthCnt = 0, monthAmt = 0;
     let designConfirmed = 0, consConfirmed = 0, consStartOk = 0;
@@ -111,8 +118,9 @@ export default function ExecDashboardPage() {
       const amt = Number(c.contract_amount) || 0;
       totalAmt += amt;
       const mk = monthKey(c);
+      const isThisMonth = mk === thisMonth;
       if (mk && mk in monthCount) monthCount[mk]++;
-      if (mk === thisMonth) {
+      if (isThisMonth) {
         monthCnt++;
         monthAmt += amt;
       }
@@ -120,8 +128,14 @@ export default function ExecDashboardPage() {
       statusCount[st] = (statusCount[st] ?? 0) + 1;
 
       const sh = normShowroom(c.showroom_id);
-      (showroom[sh] ??= { count: 0, amount: 0 }).count++;
-      showroom[sh].amount += amt;
+      const agg = (showroom[sh] ??= { count: 0, amount: 0, monthCount: 0, monthAmount: 0, status: {} });
+      agg.count++;
+      agg.amount += amt;
+      agg.status[st] = (agg.status[st] ?? 0) + 1;
+      if (isThisMonth) {
+        agg.monthCount++;
+        agg.monthAmount += amt;
+      }
 
       if (c.design_confirmed) designConfirmed++;
       if (c.construction_confirmed) consConfirmed++;
@@ -201,45 +215,80 @@ export default function ExecDashboardPage() {
                 </div>
               </Panel>
 
-              {/* 전시장별 실적 */}
-              <Panel title="전시장별 실적">
-                <ul className="space-y-2.5">
-                  {d.showrooms.map(([sh, v]) => (
-                    <li key={sh} className="text-sm">
-                      <div className="mb-1 flex items-center justify-between">
-                        <span className="font-semibold text-neutral-800">{sh}</span>
-                        <span className="tabular-nums text-neutral-500">
-                          {v.count}건 <span className="text-neutral-400">· {eok(v.amount)}</span>
-                        </span>
+              {/* 계약 진행 상태 */}
+              <Panel title="계약 진행 상태">
+                <ul className="space-y-2">
+                  {d.statuses.map(([st, n]) => (
+                    <li key={st} className="flex items-center gap-2 text-sm">
+                      <span className={`w-28 shrink-0 truncate rounded px-1.5 py-0.5 text-[11px] font-semibold ${statusTone(st)}`}>
+                        {st}
+                      </span>
+                      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-neutral-100">
+                        <div className="h-full rounded-full bg-seum-400" style={{ width: `${(n / d.maxStatus) * 100}%` }} />
                       </div>
-                      <div className="h-2.5 overflow-hidden rounded-full bg-neutral-100">
-                        <div className="h-full rounded-full bg-seum-400" style={{ width: `${(v.count / d.maxShowroom) * 100}%` }} />
-                      </div>
+                      <span className="w-10 shrink-0 text-right tabular-nums text-neutral-600">{n}건</span>
                     </li>
                   ))}
-                  {d.showrooms.length === 0 && (
-                    <li className="py-6 text-center text-sm text-neutral-400">데이터가 없습니다.</li>
-                  )}
                 </ul>
               </Panel>
             </div>
 
-            {/* 계약 진행 상태 */}
-            <Panel title="계약 진행 상태">
-              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {d.statuses.map(([st, n]) => (
-                  <li key={st} className="flex items-center gap-2 text-sm">
-                    <span className={`w-28 shrink-0 truncate rounded px-1.5 py-0.5 text-[11px] font-semibold ${statusTone(st)}`}>
-                      {st}
-                    </span>
-                    <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-neutral-100">
-                      <div className="h-full rounded-full bg-seum-400" style={{ width: `${(n / d.maxStatus) * 100}%` }} />
+            {/* 전시장별 실적 (상세) */}
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-neutral-800">전시장별 실적</h3>
+                <span className="text-xs text-neutral-400">전시장별 계약 건수·금액 · 진행 상태</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {d.showrooms.map(([sh, v]) => {
+                  const sts = Object.entries(v.status).sort((a, b) => b[1] - a[1]);
+                  return (
+                    <div key={sh} className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <h4 className="flex items-center gap-1.5 text-sm font-bold text-neutral-900">
+                          <Icon name="site" size={14} className="text-seum-500" />
+                          {sh}
+                        </h4>
+                        <span className="rounded-full bg-seum-50 px-2 py-0.5 text-xs font-semibold text-seum-700">
+                          {v.count}건
+                        </span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+                        <div className="rounded-lg bg-neutral-50 px-2 py-2">
+                          <p className="text-[11px] text-neutral-400">누적 금액</p>
+                          <p className="text-sm font-extrabold text-neutral-900">{eok(v.amount)}</p>
+                        </div>
+                        <div className="rounded-lg bg-seum-50 px-2 py-2">
+                          <p className="text-[11px] text-seum-600/70">이번달</p>
+                          <p className="text-sm font-extrabold text-seum-700">
+                            {v.monthCount}건
+                            <span className="ml-1 text-[11px] font-medium text-seum-600/80">
+                              {v.monthAmount > 0 ? `· ${eok(v.monthAmount)}` : ""}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <p className="mb-1 text-[11px] text-neutral-400">진행 상태</p>
+                        <div className="flex flex-wrap gap-1">
+                          {sts.map(([st, n]) => (
+                            <span
+                              key={st}
+                              className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${statusTone(st)}`}
+                            >
+                              {st} {n}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <span className="w-10 shrink-0 text-right tabular-nums text-neutral-600">{n}건</span>
-                  </li>
-                ))}
-              </ul>
-            </Panel>
+                  );
+                })}
+                {d.showrooms.length === 0 && (
+                  <p className="col-span-full py-6 text-center text-sm text-neutral-400">데이터가 없습니다.</p>
+                )}
+              </div>
+            </div>
           </>
         )}
       </section>
