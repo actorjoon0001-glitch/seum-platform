@@ -4,25 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@/features/portal/components/icons";
 import { useProfile } from "@/features/portal/components/PortalProvider";
 
-interface Contract {
+interface Econtract {
   id: number;
   status: string | null;
-  showroom_id: string | null;
-  contract_amount: number | null;
+  showroom: string | null;
+  salesperson: string | null;
   contract_date: string | null;
   created_at: string | null;
-  design_status: string | null;
-  design_confirmed: boolean | null;
-  construction_confirmed: boolean | null;
-  construction_start_ok: boolean | null;
-  is_deleted: boolean | null;
 }
-
-const eok = (n: number) => {
-  if (n >= 1_0000_0000) return `${(n / 1_0000_0000).toFixed(1)}억원`;
-  if (n >= 1_0000) return `${Math.round(n / 1_0000).toLocaleString("ko-KR")}만원`;
-  return `${Math.round(n).toLocaleString("ko-KR")}원`;
-};
 
 /** 전시장 라벨 표준화 (코드/한글 변형 통합) */
 function normShowroom(v: string | null): string {
@@ -36,6 +25,10 @@ function normShowroom(v: string | null): string {
   if (/showroom3|3전시장/.test(s)) return "3전시장";
   return (v ?? "").trim() || "기타";
 }
+
+/** 상태 라벨 */
+const STATUS_LABEL: Record<string, string> = { draft: "작성중", confirmed: "확정" };
+const statusLabel = (s: string) => STATUS_LABEL[s] ?? s;
 
 const TONES = [
   "bg-seum-100 text-seum-700",
@@ -52,8 +45,8 @@ function statusTone(s: string) {
   return STATUS_TONE[s];
 }
 
-function monthKey(c: Contract): string | null {
-  const d = c.contract_date || c.created_at;
+function monthKey(c: Econtract): string | null {
+  const d = c.contract_date && /^\d{4}-\d{2}/.test(c.contract_date) ? c.contract_date : c.created_at;
   if (!d) return null;
   const dt = new Date(d);
   if (isNaN(dt.getTime())) return null;
@@ -64,7 +57,7 @@ export default function ExecDashboardPage() {
   const { profile, loading } = useProfile();
   const isAdmin = ["admin", "master"].includes(profile?.permission ?? "");
 
-  const [rows, setRows] = useState<Contract[]>([]);
+  const [rows, setRows] = useState<Econtract[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState(false);
 
@@ -73,13 +66,11 @@ export default function ExecDashboardPage() {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
       const res = await supabase
-        .from("contracts")
-        .select(
-          "id, status, showroom_id, contract_amount, contract_date, created_at, design_status, design_confirmed, construction_confirmed, construction_start_ok, is_deleted",
-        )
+        .from("econtracts")
+        .select("id, status, showroom, salesperson, contract_date, created_at")
         .limit(5000);
       if (res.error) setError(true);
-      else setRows(((res.data ?? []) as Contract[]).filter((r) => !r.is_deleted));
+      else setRows((res.data ?? []) as Econtract[]);
     } catch {
       setError(true);
     } finally {
@@ -101,45 +92,28 @@ export default function ExecDashboardPage() {
     }
     const monthCount: Record<string, number> = Object.fromEntries(months.map((m) => [m, 0]));
     const statusCount: Record<string, number> = {};
-    type ShowroomAgg = {
-      count: number;
-      amount: number;
-      monthCount: number;
-      monthAmount: number;
-      status: Record<string, number>;
-    };
+    type ShowroomAgg = { count: number; monthCount: number; status: Record<string, number> };
     const showroom: Record<string, ShowroomAgg> = {};
 
-    let total = 0, totalAmt = 0, monthCnt = 0, monthAmt = 0;
-    let designConfirmed = 0, consConfirmed = 0, consStartOk = 0;
+    let total = 0, monthCnt = 0, confirmed = 0, draft = 0;
 
     for (const c of rows) {
       total++;
-      const amt = Number(c.contract_amount) || 0;
-      totalAmt += amt;
       const mk = monthKey(c);
       const isThisMonth = mk === thisMonth;
       if (mk && mk in monthCount) monthCount[mk]++;
-      if (isThisMonth) {
-        monthCnt++;
-        monthAmt += amt;
-      }
+      if (isThisMonth) monthCnt++;
+
       const st = (c.status ?? "미분류").trim() || "미분류";
       statusCount[st] = (statusCount[st] ?? 0) + 1;
+      if (st === "confirmed") confirmed++;
+      if (st === "draft") draft++;
 
-      const sh = normShowroom(c.showroom_id);
-      const agg = (showroom[sh] ??= { count: 0, amount: 0, monthCount: 0, monthAmount: 0, status: {} });
+      const sh = normShowroom(c.showroom);
+      const agg = (showroom[sh] ??= { count: 0, monthCount: 0, status: {} });
       agg.count++;
-      agg.amount += amt;
       agg.status[st] = (agg.status[st] ?? 0) + 1;
-      if (isThisMonth) {
-        agg.monthCount++;
-        agg.monthAmount += amt;
-      }
-
-      if (c.design_confirmed) designConfirmed++;
-      if (c.construction_confirmed) consConfirmed++;
-      if (c.construction_start_ok) consStartOk++;
+      if (isThisMonth) agg.monthCount++;
     }
 
     const monthly = months.map((m) => ({ month: m, count: monthCount[m] }));
@@ -147,12 +121,8 @@ export default function ExecDashboardPage() {
     const statuses = Object.entries(statusCount).sort((a, b) => b[1] - a[1]);
     const maxStatus = Math.max(1, ...statuses.map(([, n]) => n));
     const showrooms = Object.entries(showroom).sort((a, b) => b[1].count - a[1].count);
-    const maxShowroom = Math.max(1, ...showrooms.map(([, v]) => v.count));
 
-    return {
-      total, totalAmt, monthCnt, monthAmt, monthly, maxMonth, statuses, maxStatus,
-      showrooms, maxShowroom, designConfirmed, consConfirmed, consStartOk,
-    };
+    return { total, monthCnt, confirmed, draft, monthly, maxMonth, statuses, maxStatus, showrooms };
   }, [rows]);
 
   if (!loading && !isAdmin) {
@@ -169,7 +139,7 @@ export default function ExecDashboardPage() {
         <h1 className="flex items-center gap-2 text-xl font-extrabold tracking-tight sm:text-2xl">
           <Icon name="chart" size={22} /> 대표이사 대시보드
         </h1>
-        <p className="mt-1 text-sm text-seum-50/90">계약 실적 · 전시장별 현황 · 설계/시공 진행</p>
+        <p className="mt-1 text-sm text-seum-50/90">전자계약 등록 기준 영업 현황</p>
       </section>
 
       {/* 영업팀 현황 */}
@@ -179,27 +149,27 @@ export default function ExecDashboardPage() {
             <Icon name="contract" size={16} />
           </span>
           <h2 className="text-base font-bold text-neutral-900">영업팀 현황</h2>
-          <span className="text-xs text-neutral-400">계약(contracts) 기준</span>
+          <span className="text-xs text-neutral-400">전자계약(econtracts) 등록 기준</span>
         </div>
 
         {loadingData ? (
           <p className="py-10 text-center text-sm text-neutral-400">불러오는 중…</p>
         ) : error ? (
           <p className="rounded-xl border border-dashed border-rose-200 bg-white py-10 text-center text-sm text-rose-500">
-            계약 데이터를 불러올 수 없습니다. (contracts 조회 권한 필요)
+            전자계약 데이터를 불러올 수 없습니다. (econtracts 조회 권한 필요)
           </p>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <Kpi label="총 계약 건수" value={`${d.total.toLocaleString("ko-KR")}건`} />
-              <Kpi label="이번달 계약" value={`${d.monthCnt.toLocaleString("ko-KR")}건`} accent />
-              <Kpi label="이번달 계약 금액" value={eok(d.monthAmt)} />
-              <Kpi label="누적 계약 금액" value={eok(d.totalAmt)} />
+              <Kpi label="총 전자계약" value={`${d.total.toLocaleString("ko-KR")}건`} />
+              <Kpi label="이번달 등록" value={`${d.monthCnt.toLocaleString("ko-KR")}건`} accent />
+              <Kpi label="확정 완료" value={`${d.confirmed.toLocaleString("ko-KR")}건`} />
+              <Kpi label="작성중" value={`${d.draft.toLocaleString("ko-KR")}건`} />
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {/* 월별 계약 건수 */}
-              <Panel title="월별 계약 건수 (최근 12개월)">
+              {/* 월별 등록 건수 */}
+              <Panel title="월별 전자계약 등록 (최근 12개월)">
                 <div className="flex h-44 items-end gap-1.5">
                   {d.monthly.map((m) => (
                     <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
@@ -215,13 +185,13 @@ export default function ExecDashboardPage() {
                 </div>
               </Panel>
 
-              {/* 계약 진행 상태 */}
+              {/* 진행 상태 */}
               <Panel title="계약 진행 상태">
                 <ul className="space-y-2">
                   {d.statuses.map(([st, n]) => (
                     <li key={st} className="flex items-center gap-2 text-sm">
-                      <span className={`w-28 shrink-0 truncate rounded px-1.5 py-0.5 text-[11px] font-semibold ${statusTone(st)}`}>
-                        {st}
+                      <span className={`w-24 shrink-0 truncate rounded px-1.5 py-0.5 text-[11px] font-semibold ${statusTone(st)}`}>
+                        {statusLabel(st)}
                       </span>
                       <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-neutral-100">
                         <div className="h-full rounded-full bg-seum-400" style={{ width: `${(n / d.maxStatus) * 100}%` }} />
@@ -237,7 +207,7 @@ export default function ExecDashboardPage() {
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <h3 className="text-sm font-bold text-neutral-800">전시장별 실적</h3>
-                <span className="text-xs text-neutral-400">전시장별 계약 건수·금액 · 진행 상태</span>
+                <span className="text-xs text-neutral-400">전시장별 전자계약 건수 · 진행 상태</span>
               </div>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {d.showrooms.map(([sh, v]) => {
@@ -253,33 +223,15 @@ export default function ExecDashboardPage() {
                           {v.count}건
                         </span>
                       </div>
-                      <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-                        <div className="rounded-lg bg-neutral-50 px-2 py-2">
-                          <p className="text-[11px] text-neutral-400">누적 금액</p>
-                          <p className="text-sm font-extrabold text-neutral-900">{eok(v.amount)}</p>
-                        </div>
-                        <div className="rounded-lg bg-seum-50 px-2 py-2">
-                          <p className="text-[11px] text-seum-600/70">이번달</p>
-                          <p className="text-sm font-extrabold text-seum-700">
-                            {v.monthCount}건
-                            <span className="ml-1 text-[11px] font-medium text-seum-600/80">
-                              {v.monthAmount > 0 ? `· ${eok(v.monthAmount)}` : ""}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-3">
-                        <p className="mb-1 text-[11px] text-neutral-400">진행 상태</p>
-                        <div className="flex flex-wrap gap-1">
-                          {sts.map(([st, n]) => (
-                            <span
-                              key={st}
-                              className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${statusTone(st)}`}
-                            >
-                              {st} {n}
-                            </span>
-                          ))}
-                        </div>
+                      <p className="mt-2 text-xs text-neutral-500">
+                        이번달 <span className="font-bold text-seum-700">{v.monthCount}건</span>
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {sts.map(([st, n]) => (
+                          <span key={st} className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${statusTone(st)}`}>
+                            {statusLabel(st)} {n}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   );
@@ -293,25 +245,25 @@ export default function ExecDashboardPage() {
         )}
       </section>
 
-      {/* 설계팀 · 시공팀 현황 */}
-      {!loadingData && !error && (
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Panel title="설계팀 현황" icon="design">
-            <div className="grid grid-cols-2 gap-3">
-              <Mini label="설계 확정" value={d.designConfirmed} tone="text-seum-700 bg-seum-50" />
-              <Mini label="설계 미확정" value={Math.max(0, d.total - d.designConfirmed)} tone="text-amber-700 bg-amber-50" />
+      {/* 설계팀 · 시공팀 현황 (전용 데이터 연동 예정) */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {[
+          { icon: "design" as const, name: "설계팀 현황" },
+          { icon: "construction" as const, name: "시공팀 현황" },
+        ].map((s) => (
+          <div key={s.name} className="rounded-xl border border-dashed border-neutral-300 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-neutral-100 text-neutral-500">
+                <Icon name={s.icon} size={16} />
+              </span>
+              <h2 className="text-base font-bold text-neutral-900">{s.name}</h2>
             </div>
-            <p className="mt-2 text-[11px] text-neutral-400">계약 기준 설계 확정 여부</p>
-          </Panel>
-          <Panel title="시공팀 현황" icon="construction">
-            <div className="grid grid-cols-2 gap-3">
-              <Mini label="시공 확정" value={d.consConfirmed} tone="text-seum-700 bg-seum-50" />
-              <Mini label="착공 가능" value={d.consStartOk} tone="text-blue-700 bg-blue-50" />
-            </div>
-            <p className="mt-2 text-[11px] text-neutral-400">계약 기준 시공 확정·착공 승인</p>
-          </Panel>
-        </section>
-      )}
+            <p className="mt-3 text-sm text-neutral-400">
+              진행 데이터 연동 준비중입니다. 해당 팀 현황 테이블을 알려주시면 요약 카드로 추가합니다.
+            </p>
+          </div>
+        ))}
+      </section>
     </div>
   );
 }
@@ -325,23 +277,11 @@ function Kpi({ label, value, accent }: { label: string; value: string; accent?: 
   );
 }
 
-function Panel({ title, icon, children }: { title: string; icon?: "design" | "construction"; children: React.ReactNode }) {
+function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-3 flex items-center gap-1.5 text-sm font-bold text-neutral-800">
-        {icon && <Icon name={icon} size={15} className="text-neutral-500" />}
-        {title}
-      </h3>
+      <h3 className="mb-3 text-sm font-bold text-neutral-800">{title}</h3>
       {children}
-    </div>
-  );
-}
-
-function Mini({ label, value, tone }: { label: string; value: number; tone: string }) {
-  return (
-    <div className={`rounded-lg px-3 py-3 ${tone}`}>
-      <p className="text-xs opacity-80">{label}</p>
-      <p className="mt-0.5 text-2xl font-extrabold tabular-nums">{value.toLocaleString("ko-KR")}</p>
     </div>
   );
 }
