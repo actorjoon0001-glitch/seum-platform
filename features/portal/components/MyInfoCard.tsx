@@ -7,6 +7,7 @@ import { useProfile } from "./PortalProvider";
 import { ProfileEditModal } from "./ProfileEditModal";
 import { AttendanceWidget } from "./AttendanceWidget";
 import { ATTENDANCE_ENABLED } from "../config/flags";
+import { showroomLabel } from "../config/showrooms";
 
 /** 내 정보 — 로그인 직원 프로필(세움OS) + 미확인 공지 + 최근 로그인 */
 export function MyInfoCard() {
@@ -93,7 +94,7 @@ export function MyInfoCard() {
           {me?.showroom && (
             <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-seum-50 px-2 py-0.5 text-[11px] font-medium text-seum-600">
               <Icon name="site" size={12} />
-              {me.showroom}
+              {showroomLabel(me.showroom)}
             </span>
           )}
         </div>
