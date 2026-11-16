@@ -176,7 +176,7 @@ export const SYSTEMS: SystemCard[] = [
     icon: "inquiry",
     tone: "rose",
     href: "/portal/app/customer",
-    serviceUrl: "https://seum-crm-os.netlify.app/admin/logs",
+    serviceUrl: "https://seum-crm-os.netlify.app/",
     ready: true,
     launcher: true,
     teamLabel: "마케팅팀",
