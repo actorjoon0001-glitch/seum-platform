@@ -154,7 +154,7 @@ export const SYSTEMS: SystemCard[] = [
     href: "/portal/app/worklog",
     serviceUrl: "https://worklog.seum.example.com",
     ready: false,
-    launcher: true,
+    launcher: false,
     teamLabel: "경영지원팀",
   },
   {
@@ -166,7 +166,7 @@ export const SYSTEMS: SystemCard[] = [
     href: "/portal/app/archive",
     serviceUrl: "https://archive.seum.example.com",
     ready: false,
-    launcher: true,
+    launcher: false,
     teamLabel: "경영지원팀",
   },
   {
