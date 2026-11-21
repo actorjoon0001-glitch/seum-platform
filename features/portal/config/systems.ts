@@ -190,7 +190,7 @@ export const SYSTEMS: SystemCard[] = [
     href: "/portal/app/call",
     serviceUrl: "https://call-os.netlify.app/",
     ready: true,
-    launcher: true,
+    launcher: false,
     roles: ["sales", "marketing"],
     teamLabel: "마케팅팀",
   },
