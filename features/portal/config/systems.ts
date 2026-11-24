@@ -92,8 +92,9 @@ export const SYSTEMS: SystemCard[] = [
     tone: "blue",
     href: "/portal/app/home-planner",
     serviceUrl: "https://seum-home-planner.netlify.app/",
-    ready: false,
+    ready: true,
     launcher: true,
+    teamLabel: "영업팀",
   },
   {
     key: "design",
